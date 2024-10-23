@@ -16,7 +16,7 @@ class GameController:
         self.clock = pygame.time.Clock()
         self.chessboard = ChessBoard("Assets/Board.png")  # Path to your chessboard image
         self.running = True
-
+        #self.removed_pieces=ChessData.get_removed_pieces()
         self.initialize_pieces()  # Initialize the chess pieces
 
     def initialize_pieces(self):
@@ -60,6 +60,7 @@ class GameController:
                 for piece in self.chessboard.pieces:
                     piece.handle_event(event)
 
+        
             # Update pieces
             for piece in self.chessboard.pieces:
                 piece.update()
@@ -70,6 +71,8 @@ class GameController:
             # Show possible moves for all pieces (if any)
             for piece in self.chessboard.pieces:
                 piece.show_possible_moves(event)
+
+            
 
             pygame.display.flip()  # Update the display
             self.clock.tick(60)  # Limit to 60 frames per second

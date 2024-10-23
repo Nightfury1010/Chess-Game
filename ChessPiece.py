@@ -34,7 +34,10 @@ class ChessPiece(pygame.sprite.Sprite):
             x = int((x - 50) / 100)
             y = int((y - 55) / 75)
             piece_name=ChessData.get_chess_board()[x][y]
-            ChessData.update_active_piece(piece_name)
+            if ChessData.get_chess_turn() in piece_name:  # Ensure turn matches the piece clicked
+                ChessData.update_active_piece(piece_name)
+            else:
+                return
 
             if self.rect.collidepoint(event.pos):
                 self.dragging = True  # Start dragging the piece
@@ -62,23 +65,25 @@ class ChessPiece(pygame.sprite.Sprite):
                         self.updated_flag=True
                         piece_position=ChessData.get_chess_board()
                         old_x,old_y=np.argwhere(ChessData.get_chess_board()==ChessData.get_active_piece())[0]
+                        if ChessData.get_chess_board()[new_x][new_y] != ".":  # If there is a piece in the target square
+                            captured_piece = ChessData.get_chess_board()[new_x][new_y]  # Get the captured piece
+                            print(f"{captured_piece} was removed")
+                            ChessData.update_removed_pieces(captured_piece)  # Update removed pieces list
                         piece_position[old_x][old_y]="."
                         piece_position[new_x][new_y]=ChessData.get_active_piece()
+                        
+                        ChessData.update_chess_board(piece_position)
                         ChessData.false_outline_flag()
                         ChessData.update_chess_turn()
-                        if(ChessData.get_is_first_move() and self.color=="black") :
-                            ChessData.update_is_first_move()
+                        ChessData.update_active_piece("")
                         break    
                 
                 if(not self.updated_flag):
                     active_piece= ChessData.get_active_piece()
-                    print(np.argwhere(ChessData.get_chess_board()==active_piece))
                     x,y=np.argwhere(ChessData.get_chess_board()==active_piece)[0]
                     x_position=int(x)*100+20
                     y_position=int(y)*77.5+7.5
                     self.rect.topleft=(x_position,y_position)
-            if(ChessData.get_is_first_move() and self.color=="black") :
-                ChessData.update_is_first_move
 
                     
 
@@ -90,18 +95,52 @@ class ChessPiece(pygame.sprite.Sprite):
         current_position = np.argwhere(ChessData.get_chess_board() == piece)
         possible_moves = np.empty((0, 2))
         if("pawn" in piece):
+            x_coord,y_coord=current_position[0]
+            x_coord,y_coord=int(x_coord),int(y_coord)
+
+            pawn_takes_one,pawn_takes_two=np.array([[-1,-1]]),np.array([[1,-1]])
+            pawn_takes_color="black"
+            if("black" in piece):
+                pawn_takes_one,pawn_takes_two=np.array([[-1,1]]),np.array([[1,1]])
+                pawn_takes_color="white"
+            pawn_takes_one_x,pawn_takes_one_y= pawn_takes_one[0]
+            pawn_takes_two_x,pawn_takes_two_y= pawn_takes_two[0]
+            if (current_position[0][0] + pawn_takes_one_x <= 7 and
+                current_position[0][0] + pawn_takes_one_x >= 0 and
+                current_position[0][1] + pawn_takes_one_y <= 7 and
+                current_position[0][1] + pawn_takes_one_y >= 0 and
+                pawn_takes_color in ChessData.get_chess_board()[current_position[0][0] + pawn_takes_one_x][current_position[0][1] + pawn_takes_one_y]):
+                    possible_moves = np.append(possible_moves, current_position[0] + pawn_takes_one, axis=0)
+            if (current_position[0][0] + pawn_takes_two_x <= 7 and
+                current_position[0][0] + pawn_takes_two_x >= 0 and
+                current_position[0][1] + pawn_takes_two_y <= 7 and
+                current_position[0][1] + pawn_takes_two_y >= 0 and
+                pawn_takes_color in ChessData.get_chess_board()[current_position[0][0] + pawn_takes_two_x][current_position[0][1] + pawn_takes_two_y]):
+                possible_moves = np.append(possible_moves, current_position + pawn_takes_two, axis=0)
+
             first_move=np.array([[0, -1]])
             if ("black" in piece): 
                 first_move=np.array([[0, 1]])
-            possible_moves = np.append(possible_moves, current_position + first_move, axis=0)
-            if ChessData.get_is_first_move():
+            if ("." in ChessData.get_chess_board()[x_coord][y_coord+first_move[0][1]]):
+                possible_moves = np.append(possible_moves, current_position + first_move, axis=0)
+            else:
+                return possible_moves   
+            second_move=np.empty((0,2))
+            if y_coord==6 and "white" in piece:
                 second_move = np.array([[0, -2]])
-                if ("black" in piece):
-                    second_move = np.array([[0, 2]])                     
+            elif ("black" in piece and y_coord==1):
+                second_move = np.array([[0, 2]])
+            else:
+                return possible_moves                     
+            if ("." in ChessData.get_chess_board()[x_coord][y_coord+second_move[0][1]]):
                 possible_moves = np.append(possible_moves, current_position + second_move, axis=0)
+
+
         if("knight" in piece):
             move_offsets = np.array([[2, 1], [2, -1], [-2, 1], [-2, -1],[1, 2], [1, -2], [-1, 2], [-1, -2]])
-
+            knight_cannot_move="white"
+            if("black" in piece):
+                knight_cannot_move="black"
         # Loop through each offset and append the possible moves
             for offset in move_offsets:
                 new_move = current_position + offset
@@ -118,21 +157,70 @@ class ChessPiece(pygame.sprite.Sprite):
                 x_coord,y_coord=int(x_coord),int(y_coord)
                 new_position=np.array([[x_coord,y_coord]])
                 
-                if (not 'white' in ChessData.get_chess_board()[x_coord][y_coord]):
+                if (not knight_cannot_move in ChessData.get_chess_board()[x_coord][y_coord]):
                     new_possible_moves=np.append(new_possible_moves,new_position,axis=0)
                    
             
             possible_moves= new_possible_moves
+        
+
+        if "rook" in piece:
+            x_coord, y_coord = current_position[0]
+            rook_takes = "black" if "white" in piece else "white"
+
+            # Moving left, right, up, and down
+            possible_moves = add_moves_in_direction(x_coord - 1, y_coord, -1, 0, possible_moves, rook_takes)
+            possible_moves = add_moves_in_direction(x_coord + 1, y_coord, 1, 0, possible_moves, rook_takes)
+            possible_moves = add_moves_in_direction(x_coord, y_coord - 1, 0, -1, possible_moves, rook_takes)
+            possible_moves = add_moves_in_direction(x_coord, y_coord + 1, 0, 1, possible_moves, rook_takes)
+
+        if "bishop" in piece:
+            x_coord, y_coord = current_position[0]
+            bishop_takes = "black" if "white" in piece else "white"
+
+            # Moving diagonally in all four directions
+            possible_moves = add_moves_in_direction(x_coord - 1, y_coord - 1, -1, -1, possible_moves, bishop_takes)  # top-left
+            possible_moves = add_moves_in_direction(x_coord + 1, y_coord - 1, 1, -1, possible_moves, bishop_takes)   # top-right
+            possible_moves = add_moves_in_direction(x_coord - 1, y_coord + 1, -1, 1, possible_moves, bishop_takes)   # bottom-left
+            possible_moves = add_moves_in_direction(x_coord + 1, y_coord + 1, 1, 1, possible_moves, bishop_takes)     # bottom-right
+
+        if "queen" in piece:
+            x_coord, y_coord = current_position[0]
+            queen_takes = "black" if "white" in piece else "white"
+
+            # Rook-like moves (horizontal and vertical)
+            possible_moves = add_moves_in_direction(x_coord - 1, y_coord, -1, 0, possible_moves, queen_takes)  # left
+            possible_moves = add_moves_in_direction(x_coord + 1, y_coord, 1, 0, possible_moves, queen_takes)   # right
+            possible_moves = add_moves_in_direction(x_coord, y_coord - 1, 0, -1, possible_moves, queen_takes)  # up
+            possible_moves = add_moves_in_direction(x_coord, y_coord + 1, 0, 1, possible_moves, queen_takes)   # down
+
+            # Bishop-like moves (diagonal)
+            possible_moves = add_moves_in_direction(x_coord - 1, y_coord - 1, -1, -1, possible_moves, queen_takes)  # top-left
+            possible_moves = add_moves_in_direction(x_coord + 1, y_coord - 1, 1, -1, possible_moves, queen_takes)   # top-right
+            possible_moves = add_moves_in_direction(x_coord - 1, y_coord + 1, -1, 1, possible_moves, queen_takes)   # bottom-left
+            possible_moves = add_moves_in_direction(x_coord + 1, y_coord + 1, 1, 1, possible_moves, queen_takes)     # bottom-right
+
+        if "king" in piece:
+            x_coord, y_coord = current_position[0]
+            king_takes = "black" if "white" in piece else "white"
+    
+    # Possible directions the king can move (dx, dy)
+            directions = [(-1, -1),(-1, 0), (-1, 1), (0, -1),(0, 1),(1, -1),(1, 0),(1, 1)]
+
+            for dx, dy in directions:
+                new_x = x_coord + dx
+                new_y = y_coord + dy
+                if 0 <= new_x < 8 and 0 <= new_y < 8:
+                    if king_takes in ChessData.get_chess_board()[new_x][new_y] or ChessData.get_chess_board()[new_x][new_y] == ".":
+                        possible_moves = np.append(possible_moves, [[new_x, new_y]], axis=0)
+
+               
         return possible_moves
     
     def show_possible_moves(self, event):
         if (event.type== pygame.MOUSEBUTTONDOWN):
             ChessData.true_outline_flag()
-            #x,y = find_closest_point(event.pos)
-            #x = int((x - 50) / 100)
-            #y = int((y - 55) / 75)
-            #piece_name=ChessData.get_chess_board()[x][y]
-            #ChessData.update_active_piece(piece_name)
+
             if (not ChessData.get_chess_turn() in ChessData.get_active_piece()):
                 ChessData.false_outline_flag()
                 return
@@ -140,14 +228,23 @@ class ChessPiece(pygame.sprite.Sprite):
             ChessData.update_outline_moves(outline_moves)
         if ChessData.get_outline_flag() :
         # Check if the mouse is over the piece
+            takes_color="black"
+            if "black" in ChessData.get_active_piece():
+                takes_color="white"
+                
             move_marker = pygame.image.load("Assets/direction.png").convert_alpha()  # Use your own marker image here
             move_marker = pygame.transform.scale(move_marker, (100, 77.6))  # Scale the marker to fit your grid
-
+            takes_marker = pygame.image.load("Assets/direction2.png").convert_alpha()  # Use your own marker image here
+            takes_marker = pygame.transform.scale(takes_marker, (100, 77.6))  # Scale the marker to fit your grid
             for i in ChessData.get_outline_moves():
                 x, y = i
-                x = x * 100   # Adjust x to fit the grid
-                y = y * 77.5   # Adjust y to fit the grid
-                self.screen.blit(move_marker, (x, y))
+                x,y=int(x),int(y)
+                x2 = x * 100   # Adjust x to fit the grid
+                y2 = y * 77.6   # Adjust y to fit the grid
+                if takes_color in ChessData.get_chess_board()[x][y]:
+                    self.screen.blit(takes_marker, (x2, y2))
+                    continue
+                self.screen.blit(move_marker, (x2, y2))
 
 
 def distance(point1, point2):
@@ -158,3 +255,14 @@ def find_closest_point(event_pos):
     closest_point = min(points, key=lambda point: distance(point, event_pos))
     return closest_point
 
+def add_moves_in_direction(x, y, dx, dy, possible_moves, capture_color):
+    while 0 <= x < 8 and 0 <= y < 8:
+        if capture_color in ChessData.get_chess_board()[x][y]:
+            possible_moves = np.append(possible_moves, [[x, y]], axis=0)
+            break
+        if ChessData.get_chess_board()[x][y] != ".":  
+            break
+        possible_moves = np.append(possible_moves, [[x, y]], axis=0)
+        x += dx
+        y += dy
+    return possible_moves

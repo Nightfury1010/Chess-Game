@@ -5,7 +5,6 @@ class ChessData:
     chess_turn="white"
     active_piece = ""
     outline_moves = []
-    is_first_move= True
     chess_board = np.array([
         ['black_rook1', 'black_pawn1', '.', '.', '.', '.', 'white_pawn1', 'white_rook1'],
         ['black_knight1', 'black_pawn2', '.', '.', '.', '.', 'white_pawn2', 'white_knight1'],
@@ -16,6 +15,7 @@ class ChessData:
         ['black_knight2', 'black_pawn7', '.', '.', '.', '.', 'white_pawn7', 'white_knight2'],
         ['black_rook2', 'black_pawn8', '.', '.', '.', '.', 'white_pawn8', 'white_rook2']
     ])
+    removed_pieces = ""
 
     @classmethod
     def get_chess_board(cls):
@@ -54,14 +54,6 @@ class ChessData:
         cls.active_piece= new_piece
 
     @classmethod
-    def get_is_first_move(cls):
-        return cls.is_first_move
-    
-    @classmethod
-    def update_is_first_move(cls):
-        cls.is_first_move =False
-
-    @classmethod
     def get_chess_turn(cls):
         return cls.chess_turn
     
@@ -71,3 +63,11 @@ class ChessData:
             cls.chess_turn="black"
         elif cls.chess_turn=="black": 
             cls.chess_turn="white"
+
+    @classmethod
+    def get_removed_pieces(cls):
+        return cls.removed_pieces
+    
+    @classmethod
+    def update_removed_pieces(cls,new_removed_piece):
+        cls.removed_pieces=new_removed_piece
