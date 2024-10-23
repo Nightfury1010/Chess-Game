@@ -16,7 +16,8 @@ class ChessBoard(pygame.sprite.Sprite):
 
     def add_piece(self, piece):
         self.pieces.add(piece)  # Add the piece to the sprite group
-        self.piece_dict[f"{piece.color}_{piece.piece_type}"] = piece  # Store piece in the dictionary
+        self.piece_dict[piece.piece_type] = piece  # Store the piece using its name for quick access
+  # Store piece in the dictionary
 
     def draw(self, screen):
         # Draw the chessboard image first
@@ -25,3 +26,12 @@ class ChessBoard(pygame.sprite.Sprite):
 
     def update(self):
         self.pieces.update()  # Call the update method for all pieces if needed
+
+    def remove_piece(self, piece_name):
+        print(f"Removed piece: {piece_name}")
+        if piece_name in self.piece_dict:
+            piece = self.piece_dict[piece_name]
+            piece.kill()  # Removes the sprite from all groups
+            self.pieces.remove(piece)  # Remove from the sprite group
+            del self.piece_dict[piece_name]  # Remove from the dictionary
+            

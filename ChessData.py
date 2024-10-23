@@ -15,6 +15,7 @@ class ChessData:
         ['black_knight2', 'black_pawn7', '.', '.', '.', '.', 'white_pawn7', 'white_knight2'],
         ['black_rook2', 'black_pawn8', '.', '.', '.', '.', 'white_pawn8', 'white_rook2']
     ])
+    move_sound=False
     removed_pieces = ""
 
     @classmethod
@@ -65,9 +66,17 @@ class ChessData:
             cls.chess_turn="white"
 
     @classmethod
-    def get_removed_pieces(cls):
+    def get_removed_piece(cls):
         return cls.removed_pieces
     
     @classmethod
-    def update_removed_pieces(cls,new_removed_piece):
+    def update_removed_piece(cls,new_removed_piece):
         cls.removed_pieces=new_removed_piece
+
+    @classmethod
+    def get_move_sound(cls):
+        return cls.move_sound
+    
+    @classmethod
+    def update_move_sound(cls,move_sound_logic):
+        cls.move_sound=move_sound_logic

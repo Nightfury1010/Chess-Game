@@ -68,7 +68,9 @@ class ChessPiece(pygame.sprite.Sprite):
                         if ChessData.get_chess_board()[new_x][new_y] != ".":  # If there is a piece in the target square
                             captured_piece = ChessData.get_chess_board()[new_x][new_y]  # Get the captured piece
                             print(f"{captured_piece} was removed")
-                            ChessData.update_removed_pieces(captured_piece)  # Update removed pieces list
+                            ChessData.update_removed_piece(captured_piece)  # Update removed pieces list
+                        else:
+                            ChessData.update_move_sound(True)
                         piece_position[old_x][old_y]="."
                         piece_position[new_x][new_y]=ChessData.get_active_piece()
                         
@@ -76,6 +78,7 @@ class ChessPiece(pygame.sprite.Sprite):
                         ChessData.false_outline_flag()
                         ChessData.update_chess_turn()
                         ChessData.update_active_piece("")
+                        
                         break    
                 
                 if(not self.updated_flag):
@@ -266,3 +269,5 @@ def add_moves_in_direction(x, y, dx, dy, possible_moves, capture_color):
         x += dx
         y += dy
     return possible_moves
+
+

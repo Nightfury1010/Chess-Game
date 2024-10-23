@@ -7,18 +7,23 @@ from ChessData import ChessData
 
 
 class GameController:
+    
     def __init__(self):
         pygame.init()
+        pygame.mixer.init()
         self.screen_width = 800
         self.screen_height = 620
         self.screen = pygame.display.set_mode((self.screen_width, self.screen_height))
-        pygame.display.set_caption("Chess Game")  # Add a title to the window
+        pygame.display.set_caption("Chess Game")  # Adds a title to the window
         self.clock = pygame.time.Clock()
-        self.chessboard = ChessBoard("Assets/Board.png")  # Path to your chessboard image
+        self.chessboard = ChessBoard("Assets/Board.png")
         self.running = True
-        #self.removed_pieces=ChessData.get_removed_pieces()
-        self.initialize_pieces()  # Initialize the chess pieces
-
+        self.game_start_sound=pygame.mixer.Sound("Assets/game_start.mp3")
+        self.piece_capture_sound=pygame.mixer.Sound("Assets/capture.mp3")
+        self.piece_move_sound=pygame.mixer.Sound("Assets/move.mp3")
+        self.initialize_pieces()  # Initializes the chess pieces
+        
+        
     def initialize_pieces(self):
         # Add pawns
         for i in range(8):
@@ -49,7 +54,8 @@ class GameController:
 
         self.chessboard.add_piece(ChessPiece("black_knight1", "black", "Assets/KnightBlack.png", [120, 7.5], self.screen))
         self.chessboard.add_piece(ChessPiece("black_knight2", "black", "Assets/KnightBlack.png", [620, 7.5], self.screen))
-
+        
+        self.game_start_sound.play()
     def run(self):
         while self.running:
             for event in pygame.event.get():
@@ -60,7 +66,16 @@ class GameController:
                 for piece in self.chessboard.pieces:
                     piece.handle_event(event)
 
-        
+            if ChessData.get_removed_piece():
+                self.chessboard.remove_piece(ChessData.get_removed_piece())
+                self.piece_capture_sound.play()
+                ChessData.update_removed_piece("")
+
+            if ChessData.get_move_sound():
+                self.piece_move_sound.play()
+                ChessData.update_move_sound(False)
+
+                
             # Update pieces
             for piece in self.chessboard.pieces:
                 piece.update()
