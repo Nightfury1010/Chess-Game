@@ -37,8 +37,8 @@ class GameController:
         self.chessboard.add_piece(ChessPiece("white_bishop1", "white", "Assets/BishopWhite.png", [220, 550], self.screen))
         self.chessboard.add_piece(ChessPiece("white_bishop2", "white", "Assets/BishopWhite.png", [520, 550], self.screen))
 
-        self.chessboard.add_piece(ChessPiece("white_king", "white", "Assets/KingWhite.png", [320, 550], self.screen))
-        self.chessboard.add_piece(ChessPiece("white_queen", "white", "Assets/QueenWhite.png", [420, 550], self.screen))
+        self.chessboard.add_piece(ChessPiece("white_king", "white", "Assets/KingWhite.png", [420, 550], self.screen))
+        self.chessboard.add_piece(ChessPiece("white_queen", "white", "Assets/QueenWhite.png", [320, 550], self.screen))
 
         self.chessboard.add_piece(ChessPiece("white_knight1", "white", "Assets/KnightWhite.png", [120, 550], self.screen))
         self.chessboard.add_piece(ChessPiece("white_knight2", "white", "Assets/KnightWhite.png", [620, 550], self.screen))
@@ -49,8 +49,8 @@ class GameController:
         self.chessboard.add_piece(ChessPiece("black_bishop1", "black", "Assets/BishopBlack.png", [220, 7.5], self.screen))
         self.chessboard.add_piece(ChessPiece("black_bishop2", "black", "Assets/BishopBlack.png", [520, 7.5], self.screen))
 
-        self.chessboard.add_piece(ChessPiece("black_king", "black", "Assets/KingBlack.png", [320, 7.5], self.screen))
-        self.chessboard.add_piece(ChessPiece("black_queen", "black", "Assets/QueenBlack.png", [420, 7.5], self.screen))
+        self.chessboard.add_piece(ChessPiece("black_king", "black", "Assets/KingBlack.png", [420, 7.5], self.screen))
+        self.chessboard.add_piece(ChessPiece("black_queen", "black", "Assets/QueenBlack.png", [320, 7.5], self.screen))
 
         self.chessboard.add_piece(ChessPiece("black_knight1", "black", "Assets/KnightBlack.png", [120, 7.5], self.screen))
         self.chessboard.add_piece(ChessPiece("black_knight2", "black", "Assets/KnightBlack.png", [620, 7.5], self.screen))
@@ -58,6 +58,10 @@ class GameController:
         self.game_start_sound.play()
     def run(self):
         while self.running:
+            if not ChessData.get_game():
+                print("Check mate!!!")
+                break
+
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     self.running = False

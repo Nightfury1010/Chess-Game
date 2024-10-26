@@ -1,6 +1,7 @@
 import numpy as np
 
 class ChessData:
+    game=True
     outline_flag = False
     chess_turn="white"
     active_piece = ""
@@ -17,6 +18,14 @@ class ChessData:
     ])
     move_sound=False
     removed_pieces = ""
+    dragging_flag=False
+    white_right_castle=False
+    white_left_castle=False
+    black_right_castle=False
+    black_left_castle=False
+    has_black_king_moved= False
+    has_white_king_moved= False
+
 
     @classmethod
     def get_chess_board(cls):
@@ -80,3 +89,19 @@ class ChessData:
     @classmethod
     def update_move_sound(cls,move_sound_logic):
         cls.move_sound=move_sound_logic
+
+    @classmethod
+    def get_dragging_flag(cls):
+        return cls.dragging_flag
+    
+    @classmethod
+    def update_dragging_flag(cls,flag_option):
+        cls.dragging_flag=flag_option
+
+    @classmethod
+    def game_over(cls):
+        cls.game=False
+
+    @classmethod
+    def get_game(cls):
+        return cls.game
