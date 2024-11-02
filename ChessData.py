@@ -19,12 +19,8 @@ class ChessData:
     move_sound=False
     removed_pieces = ""
     dragging_flag=False
-    white_right_castle=False
-    white_left_castle=False
-    black_right_castle=False
-    black_left_castle=False
-    has_black_king_moved= False
-    has_white_king_moved= False
+    castle=""
+    has_piece_moved={'black_king':False,'white_king':False,'black_rook2':False,'black_rook1':False,'white_rook1':False,'white_rook2':False}
 
 
     @classmethod
@@ -105,3 +101,24 @@ class ChessData:
     @classmethod
     def get_game(cls):
         return cls.game
+    
+    @classmethod
+    def get_has_piece_moved(cls,piece):
+        return cls.has_piece_moved[piece]
+    
+    @classmethod
+    def update_has_piece_moved(cls,piece):
+        if piece in cls.has_piece_moved:
+            cls.has_piece_moved[piece]=True
+    @classmethod
+    def get_castling_side(cls):
+        return cls.castle
+    
+    @classmethod
+    def update_get_castling_side(cls,castle_side):
+        cls.castle=castle_side
+        
+    
+    
+    
+    

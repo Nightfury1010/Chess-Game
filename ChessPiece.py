@@ -82,16 +82,19 @@ class ChessPiece(pygame.sprite.Sprite):
                             if(new_x==6 and self.is_right_castling_availabe()):
                                 piece_position[5][new_y]=ChessData.get_chess_turn()+"_rook2"
                                 piece_position[7][new_y]="."
-                                print(ChessData.get_chess_board())
+                                ChessData.update_get_castling_side("right")
+                                print("right")
                             if(new_x==2 and self.is_left_castling_availabe()):
                                 piece_position[3][new_y]=ChessData.get_chess_turn()+"_rook1"
                                 piece_position[0][new_y]="."
+                                ChessData.update_get_castling_side("left")
+                                print("left")
                         piece_position[old_x][old_y]="."
-                        piece_position[new_x][new_y]=ChessData.get_active_piece()    
-                        piece_position[4][4]="black_rook1"
+                        piece_position[new_x][new_y]=ChessData.get_active_piece()   
                         ChessData.update_chess_board(piece_position)
                         ChessData.false_outline_flag()
                         ChessData.update_chess_turn()
+                        ChessData.update_has_piece_moved(ChessData.get_active_piece())
                         ChessData.update_active_piece("")
                         king_location = np.argwhere(ChessData.get_chess_board() == (ChessData.get_chess_turn() + "_king"))[0]
                         if self.is_piece_in_check(ChessData.get_chess_turn(),ChessData.get_chess_board(),king_location):
@@ -257,7 +260,7 @@ class ChessPiece(pygame.sprite.Sprite):
                     removed_king_in_check=np.append(removed_king_in_check,[[new_x,new_y]],axis=0)
             outline_moves=removed_king_in_check
             king_location = np.argwhere(ChessData.get_chess_board() == (ChessData.get_chess_turn() + "_king"))[0]
-            if not self.is_piece_in_check(ChessData.get_chess_turn(),ChessData.get_chess_board(),king_location) and ChessData.get_active_piece()==ChessData.get_chess_turn()+"_king":
+            if ChessData.get_active_piece()==ChessData.get_chess_turn()+"_king" and not ChessData.get_has_piece_moved(ChessData.get_active_piece()) and not self.is_piece_in_check(ChessData.get_chess_turn(),ChessData.get_chess_board(),king_location):
                 y=7
                 if ChessData.get_chess_turn()=="black":
                     y=0
@@ -321,7 +324,8 @@ class ChessPiece(pygame.sprite.Sprite):
             y=0
         if (ChessData.get_chess_board()[5][y]=="." and ChessData.get_chess_board()[6][y]=="." and 
             not self.is_piece_in_check(ChessData.get_chess_turn(),ChessData.get_chess_board(),[5,y]) and
-            not self.is_piece_in_check(ChessData.get_chess_turn(),ChessData.get_chess_board(),[6,y])):
+            not self.is_piece_in_check(ChessData.get_chess_turn(),ChessData.get_chess_board(),[6,y]) and
+            not ChessData.get_has_piece_moved(f'{ChessData.get_chess_turn()}_rook2')):
             return True
         else:
             return False
@@ -333,7 +337,8 @@ class ChessPiece(pygame.sprite.Sprite):
         if (ChessData.get_chess_board()[3][y]=="." and ChessData.get_chess_board()[2][y]=="." and ChessData.get_chess_board()[1][y]=="." and
             not self.is_piece_in_check(ChessData.get_chess_turn(),ChessData.get_chess_board(),[3,y]) and
             not self.is_piece_in_check(ChessData.get_chess_turn(),ChessData.get_chess_board(),[2,y]) and
-            not self.is_piece_in_check(ChessData.get_chess_turn(),ChessData.get_chess_board(),[1,y])):
+            not self.is_piece_in_check(ChessData.get_chess_turn(),ChessData.get_chess_board(),[1,y]) and
+            not ChessData.get_has_piece_moved(f'{ChessData.get_chess_turn()}_rook1')):
             return True
         else:
             return False
