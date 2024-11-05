@@ -83,12 +83,10 @@ class ChessPiece(pygame.sprite.Sprite):
                                 piece_position[5][new_y]=ChessData.get_chess_turn()+"_rook2"
                                 piece_position[7][new_y]="."
                                 ChessData.update_get_castling_side("right")
-                                print("right")
                             if(new_x==2 and self.is_left_castling_availabe()):
                                 piece_position[3][new_y]=ChessData.get_chess_turn()+"_rook1"
                                 piece_position[0][new_y]="."
                                 ChessData.update_get_castling_side("left")
-                                print("left")
                         piece_position[old_x][old_y]="."
                         piece_position[new_x][new_y]=ChessData.get_active_piece()   
                         ChessData.update_chess_board(piece_position)
@@ -240,7 +238,7 @@ class ChessPiece(pygame.sprite.Sprite):
         return possible_moves
     
     def show_possible_moves(self, event):
-        if (event.type== pygame.MOUSEBUTTONDOWN):
+        if (event != None and event.type== pygame.MOUSEBUTTONDOWN):
             ChessData.true_outline_flag()
 
             if (not ChessData.get_chess_turn() in ChessData.get_active_piece()):

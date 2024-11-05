@@ -25,9 +25,13 @@ class GameController:
         self.piece_move_sound=pygame.mixer.Sound("Assets/move.mp3")
         self.check_mate_sound=pygame.mixer.Sound("Assets/game over checkmate.mp3")
         self.castling_sound=pygame.mixer.Sound("Assets/castling.mp3")
+        self.menu_over=False
         
         
     def initialize_pieces(self):
+
+        for pieces in self.chessboard.piece_dict.copy():
+            self.chessboard.remove_piece(pieces)
         # Add pawns
         for i in range(8):
             self.chessboard.add_piece(ChessPiece(f"white_pawn{i + 1}", "white", "Assets/PawnWhite.png", [i * 100 + 20, 472.5], self.screen))
@@ -60,14 +64,15 @@ class GameController:
         
         self.game_start_sound.play()
     def run(self):
-        self.initialize_pieces()  # Initializes the chess pieces
         while self.running:
+            current_event=None
             if not ChessData.get_game():
                 self.check_mate_sound.play()
-                self.game_over=True
+                self.menu_over=False
                 break
 
             for event in pygame.event.get():
+                current_event=event
                 if event.type == pygame.QUIT:
                     self.running = False
                 
@@ -122,20 +127,45 @@ class GameController:
             
             # Show possible moves for all pieces (if any)
             for piece in self.chessboard.pieces:
-                piece.show_possible_moves(event)
+                piece.show_possible_moves(current_event)
 
             
 
             pygame.display.flip()  # Update the display
             self.clock.tick(60)  # Limit to 60 frames per second
-        while(self.game_over):
-            game_over_menu = pygame.image.load("Assets/wooden_board3.png").convert_alpha()  # Use your own marker image here
+        
+        
+    def game_over_menu(self):
+        while(not self.menu_over):
+            pygame.display.flip()
+            game_over_menu = pygame.image.load("Assets/wooden_board.png").convert_alpha()  # Use your own marker image here
             game_over_menu = pygame.transform.scale(game_over_menu, (300, 310)) 
             self.screen.blit(game_over_menu, (270, 162.5))
-            game_over_menu.set_alpha(255)
-            pygame.display.flip()
+            font = pygame.font.Font(None, 40)  # Use default font and set size
+            winner_text = "Black Wins!" if ChessData.get_chess_turn() == "white" else "White Wins!"
+            game_over_text = font.render(winner_text, True, (0, 0, 0))  # Black text
+            self.screen.blit(game_over_text, (335, 200))
+            self.chessboard.display_sub_menu(self.screen,image_path="Assets/Asset 9@4x.png",text="Restart",size=(150, 50),position=(345, 240))
+            self.chessboard.display_sub_menu(self.screen,image_path="Assets/Asset 9@4x.png",text="Main Menu",size=(150, 50),position=(345, 305))
+            self.chessboard.display_sub_menu(self.screen,image_path="Assets/Asset 9@4x.png",text="Quit",size=(150, 50),position=(345, 370))
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     self.game_over = False
-                    self.running = False                                         
-        pygame.quit()
+                    self.running = False 
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    mouse_pos = pygame.mouse.get_pos()  # Get the current mouse position
+            
+            # Check if the mouse is over the submenu
+                    if (345 <= mouse_pos[0] <= 345 + 150 and 220 <= mouse_pos[1] <= 240 + 50):  # Change these values based on your submenu position and size
+                        self.running = True
+                        ChessData.new_game()
+                        ChessData.board_reset()
+                        self.menu_over=True
+
+                    elif (345 <= mouse_pos[0] <= 345 + 150 and 350 <= mouse_pos[1] <= 370 + 50):
+                        self.menu_over=True
+                        self.game_over = True  # Exit game over state
+                        self.running = False  # Stop the main loop
+                        pygame.mixer.stop()  # Stop all sounds
+                        pygame.mixer.quit()  # Quit the mixer
+                        pygame.quit()  # Quit Pygame

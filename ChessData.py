@@ -16,6 +16,16 @@ class ChessData:
         ['black_knight2', 'black_pawn7', '.', '.', '.', '.', 'white_pawn7', 'white_knight2'],
         ['black_rook2', 'black_pawn8', '.', '.', '.', '.', 'white_pawn8', 'white_rook2']
     ])
+    starting_chess_board=np.array([
+        ['black_rook1', 'black_pawn1', '.', '.', '.', '.', 'white_pawn1', 'white_rook1'],
+        ['black_knight1', 'black_pawn2', '.', '.', '.', '.', 'white_pawn2', 'white_knight1'],
+        ['black_bishop1', 'black_pawn3', '.', '.', '.', '.', 'white_pawn3', 'white_bishop1'],
+        ['black_queen', 'black_pawn4', '.', '.', '.', '.', 'white_pawn4', 'white_queen'],
+        ['black_king', 'black_pawn5', '.', '.', '.', '.', 'white_pawn5', 'white_king'],
+        ['black_bishop2', 'black_pawn6', '.', '.', '.', '.', 'white_pawn6', 'white_bishop2'],
+        ['black_knight2', 'black_pawn7', '.', '.', '.', '.', 'white_pawn7', 'white_knight2'],
+        ['black_rook2', 'black_pawn8', '.', '.', '.', '.', 'white_pawn8', 'white_rook2']
+    ])
     move_sound=False
     removed_pieces = ""
     dragging_flag=False
@@ -103,6 +113,12 @@ class ChessData:
         return cls.game
     
     @classmethod
+    def new_game(cls):
+        cls.game =True
+    
+
+    
+    @classmethod
     def get_has_piece_moved(cls,piece):
         return cls.has_piece_moved[piece]
     
@@ -117,8 +133,14 @@ class ChessData:
     @classmethod
     def update_get_castling_side(cls,castle_side):
         cls.castle=castle_side
-        
-    
+
+    @classmethod
+    def board_reset(cls):
+        cls.chess_board = cls.starting_chess_board.copy()
+        cls.chess_turn="white"
+        cls.active_piece = ""
+        cls.castle=""
+        cls.has_piece_moved={'black_king':False,'white_king':False,'black_rook2':False,'black_rook1':False,'white_rook1':False,'white_rook2':False}
     
     
     
