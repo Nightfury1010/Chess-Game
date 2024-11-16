@@ -1,6 +1,7 @@
 import pygame
 import math
 import numpy as np
+import random
 from ChessData import ChessData
 
 points = []
@@ -25,7 +26,8 @@ class ChessPiece(pygame.sprite.Sprite):
         self.move_marker = pygame.image.load("Assets/direction.png").convert_alpha()  # Use your own marker image here
         self.takes_marker = pygame.image.load("Assets/direction2.png").convert_alpha()  # Use your own marker image here
         self.takes_marker = pygame.transform.scale(self.takes_marker, (100, 77.6))  # Scale the marker to fit your grid
-        self.move_marker = pygame.transform.scale(self.move_marker, (100, 77.6))  
+        self.move_marker = pygame.transform.scale(self.move_marker, (100, 77.6)) 
+        self.bot = ChessData.get_bot()
 
     def update(self):
         if self.dragging :
@@ -94,11 +96,51 @@ class ChessPiece(pygame.sprite.Sprite):
                         ChessData.update_chess_turn()
                         ChessData.update_has_piece_moved(ChessData.get_active_piece())
                         ChessData.update_active_piece("")
+
                         king_location = np.argwhere(ChessData.get_chess_board() == (ChessData.get_chess_turn() + "_king"))[0]
                         if self.is_piece_in_check(ChessData.get_chess_turn(),ChessData.get_chess_board(),king_location):
                             if self.is_it_checkmate():
                                 ChessData.game_over()
-                        break    
+                        
+                        if self.bot=="easy":
+                            moves,piece = self.easy_bot_algorithm()
+                            if moves is None:
+                                ChessData.game_over()
+                                break
+                            new_x,new_y=moves
+                            print(moves,piece)
+                            new_x,new_y=int(new_x),int(new_y)
+                            ChessData.update_active_piece(piece)
+                            ChessData.update_bot_move(moves,piece)
+                            x_position=new_x*100+20
+                            y_position=new_y*77.5+7.5
+                            self.updated_flag=True
+                            piece_position=ChessData.get_chess_board()
+                            old_x,old_y=np.argwhere(ChessData.get_chess_board()==ChessData.get_active_piece())[0]
+                            if ChessData.get_chess_board()[new_x][new_y] != ".":  # If there is a piece in the target square
+                                captured_piece = ChessData.get_chess_board()[new_x][new_y]  # Get the captured piece
+                                ChessData.update_removed_piece(captured_piece)  # Update removed pieces list
+                            else:
+                                ChessData.update_move_sound(True)
+                        
+                            if ('king' in ChessData.get_active_piece()):
+                                if(new_x==6 and self.is_right_castling_availabe()):
+                                    piece_position[5][new_y]=ChessData.get_chess_turn()+"_rook2"
+                                    piece_position[7][new_y]="."
+                                    ChessData.update_get_castling_side("right")
+                                if(new_x==2 and self.is_left_castling_availabe()):
+                                    piece_position[3][new_y]=ChessData.get_chess_turn()+"_rook1"
+                                    piece_position[0][new_y]="."
+                                    ChessData.update_get_castling_side("left")
+                            piece_position[old_x][old_y]="."
+                            piece_position[new_x][new_y]=ChessData.get_active_piece()   
+                            ChessData.update_chess_board(piece_position)
+                            ChessData.update_chess_turn()
+                            ChessData.update_has_piece_moved(ChessData.get_active_piece())
+                            ChessData.update_active_piece("")
+                        
+                        break
+                            
                 
                 if(not self.updated_flag):
                     active_piece= ChessData.get_active_piece()
@@ -340,8 +382,36 @@ class ChessPiece(pygame.sprite.Sprite):
             return True
         else:
             return False
-            
+
+    def easy_bot_algorithm(self):
+        print("Starting new one")
+        new_chessboard = ChessData.get_chess_board().flatten()
+        last_option = None
+        for piece in new_chessboard :
+            if "black" in piece:
+                possible_moves_by_bot = self.get_possible_moves(piece,ChessData.get_chess_board())
+                removed_king_in_check=np.empty((0,2))
+                for moves in possible_moves_by_bot:
+                    new_x,new_y=moves
+                    new_x,new_y=int(new_x),int(new_y)
+                    new_chessboard = ChessData.get_chess_board().copy()
+                    old_x,old_y=np.argwhere(ChessData.get_chess_board()==piece)[0]
+                    new_chessboard[old_x][old_y]="."
+                    new_chessboard[new_x][new_y]=piece
+                    color = "black"
+                    king_location = np.argwhere(new_chessboard == (color+ "_king"))[0]
+                    if not self.is_piece_in_check(color,new_chessboard,king_location):
+                        removed_king_in_check=np.append(removed_king_in_check,[[new_x,new_y]],axis=0)
+                possible_moves_by_bot=removed_king_in_check
                 
+                for moves in possible_moves_by_bot:
+                    print(moves)
+                    random_number = random.randint(0, 100)
+                    if moves.any():
+                        last_option= (moves,piece)
+                    if random_number> 90:
+                        return (moves,piece)
+        return last_option      
             
 
 
@@ -364,3 +434,5 @@ def add_moves_in_direction(x, y, dx, dy, possible_moves, capture_color,chess_boa
         x += dx
         y += dy
     return possible_moves
+
+    

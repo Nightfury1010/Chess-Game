@@ -1,6 +1,7 @@
 import numpy as np
 
 class ChessData:
+    bot=""
     game=True
     outline_flag = False
     chess_turn="white"
@@ -31,6 +32,9 @@ class ChessData:
     dragging_flag=False
     castle=""
     has_piece_moved={'black_king':False,'white_king':False,'black_rook2':False,'black_rook1':False,'white_rook1':False,'white_rook2':False}
+    player_color=""
+    bot_move=[]
+    bot_piece=""
 
 
     @classmethod
@@ -142,5 +146,31 @@ class ChessData:
         cls.castle=""
         cls.has_piece_moved={'black_king':False,'white_king':False,'black_rook2':False,'black_rook1':False,'white_rook1':False,'white_rook2':False}
     
+    @classmethod
+    def get_player_color(cls):
+        return cls.player_color
     
+    @classmethod
+    def update_player_color(cls,color):
+        cls.player_color=color
+
+    @classmethod
+    def get_bot(cls):
+        return cls.bot
+    
+    @classmethod
+    def update_bot_level(cls,level):
+        cls.bot=level
+    
+    @classmethod
+    def get_bot_move(cls):
+        if cls.bot_piece != "" :
+            return cls.bot_move,cls.bot_piece
+        else:
+            return False
+    
+    @classmethod
+    def update_bot_move(cls,move,piece):
+        cls.bot_move=move
+        cls.bot_piece=piece
     

@@ -17,6 +17,7 @@ class GameController:
         pygame.display.set_caption("Chess Game")  # Adds a title to the window
         self.clock = pygame.time.Clock()
         self.chessboard = ChessBoard("Assets/Board.png")
+        self.chessboard.draw(self.screen)
         self.running = True
         self.pause = False
         self.game_over = False
@@ -25,7 +26,10 @@ class GameController:
         self.piece_move_sound=pygame.mixer.Sound("Assets/move.mp3")
         self.check_mate_sound=pygame.mixer.Sound("Assets/game over checkmate.mp3")
         self.castling_sound=pygame.mixer.Sound("Assets/castling.mp3")
-        self.menu_over=False
+        self.menu_over = False
+        self.singleplayer = False
+        self.choose_difficulty = False
+        self.bot=""
         
         
     def initialize_pieces(self):
@@ -84,6 +88,19 @@ class GameController:
                 self.piece_move_sound.play()
                 ChessData.update_move_sound(False)
 
+            if ChessData.get_bot_move():
+                location, piece_one = ChessData.get_bot_move()
+                piece_type = piece_one[6:-1].capitalize() + piece_one[:5].capitalize()
+                if "queen" in piece_one or 'king' in piece_one:
+                    piece_type = piece_one[6:].capitalize() + piece_one[:5].capitalize()
+                self.chessboard.remove_piece(piece_one)
+                x,y = location
+                x,y= int(x),int(y)
+                piece_two = ChessData.get_chess_board()[x][y]
+                self.chessboard.remove_piece(piece_two)
+                self.chessboard.add_piece(ChessPiece(piece_one, piece_one[:5], f"Assets/{piece_type}.png", [x*100+20, 7.5+y*77.5], self.screen))
+                ChessData.update_bot_move([],"")
+
 
             if ChessData.get_castling_side()=="left":
                 color="white"
@@ -96,6 +113,7 @@ class GameController:
                 self.chessboard.add_piece(ChessPiece(f"{color}_rook1", color, f"Assets/Rook{color.capitalize()}.png", [320,y], self.screen))
                 ChessData.update_get_castling_side("")
                 self.castling_sound.play()
+            
             elif ChessData.get_castling_side()=="right":
                 color="white"
                 if ChessData.get_chess_turn()=="white":
@@ -121,6 +139,7 @@ class GameController:
             # Update pieces
             for piece in self.chessboard.pieces:
                 piece.update()
+                
 
             self.screen.fill((255, 255, 255))  # Fill screen with white
             self.chessboard.draw(self.screen)  # Draw the chessboard and pieces
@@ -169,3 +188,83 @@ class GameController:
                         pygame.mixer.stop()  # Stop all sounds
                         pygame.mixer.quit()  # Quit the mixer
                         pygame.quit()  # Quit Pygame
+
+    def menu(self):
+        while(not self.menu_over):
+            pygame.display.flip()
+            main_menu = pygame.image.load("Assets/wooden_board.png").convert_alpha()  # Use your own marker image here
+            main_menu = pygame.transform.scale(main_menu, (300, 310)) 
+            self.screen.blit(main_menu, (270, 162.5))
+            font = pygame.font.Font(None, 40)  # Use default font and set size
+            winner_text = "Main Menu" 
+            game_over_text = font.render(winner_text, True, (0, 0, 0))  # Black text
+            self.screen.blit(game_over_text, (345, 200))
+            self.chessboard.display_sub_menu(self.screen,image_path="Assets/Asset 9@4x.png",text="Singleplayer",size=(150, 50),position=(345, 240))
+            self.chessboard.display_sub_menu(self.screen,image_path="Assets/Asset 9@4x.png",text="Multiplayer",size=(150, 50),position=(345, 305))
+            self.chessboard.display_sub_menu(self.screen,image_path="Assets/Asset 9@4x.png",text="Quit",size=(150, 50),position=(345, 370))
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    self.game_over = False
+                    self.running = False 
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    mouse_pos = pygame.mouse.get_pos()  # Get the current mouse position
+            
+            # Check if the mouse is over the submenu
+                    if (345 <= mouse_pos[0] <= 345 + 150 and 220 <= mouse_pos[1] <= 240 + 50):  # Change these values based on your submenu position and size
+                        self.running = True
+                        ChessData.new_game()
+                        self.menu_over=True
+                        self.singleplayer=True
+                        self.choose_difficulty = True
+
+                    if (345 <= mouse_pos[0] <= 345 + 150 and 305 <= mouse_pos[1] <= 305 + 50):  # Change these values based on your submenu position and size
+                        self.running = True
+                        ChessData.new_game()
+                        self.menu_over=True
+                        self.singleplayer=False
+                        
+
+                    elif (345 <= mouse_pos[0] <= 345 + 150 and 350 <= mouse_pos[1] <= 370 + 50):
+                        self.menu_over=True
+                        self.game_over = True  # Exit game over state
+                        self.running = False  # Stop the main loop
+                        pygame.mixer.stop()  # Stop all sounds
+                        pygame.mixer.quit()  # Quit the mixer
+                        pygame.quit()  # Quit Pygame
+
+    def choose_difficulty_menu(self):
+        self.menu_over=False
+        while(not self.menu_over):
+            pygame.display.flip()
+            main_menu = pygame.image.load("Assets/wooden_board.png").convert_alpha()  # Use your own marker image here
+            main_menu = pygame.transform.scale(main_menu, (300, 310)) 
+            self.screen.blit(main_menu, (270, 162.5))
+            font = pygame.font.Font(None, 40)  # Use default font and set size
+            winner_text = "Single Player" 
+            game_over_text = font.render(winner_text, True, (0, 0, 0))  # Black text
+            self.screen.blit(game_over_text, (345, 200))
+            self.chessboard.display_sub_menu(self.screen,image_path="Assets/Asset 9@4x.png",text="Easy Bot",size=(150, 50),position=(345, 240))
+            self.chessboard.display_sub_menu(self.screen,image_path="Assets/Asset 9@4x.png",text="Medium Bot",size=(150, 50),position=(345, 305))
+            self.chessboard.display_sub_menu(self.screen,image_path="Assets/Asset 9@4x.png",text="Hard Bot",size=(150, 50),position=(345, 370))
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    self.game_over = False
+                    self.running = False 
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    mouse_pos = pygame.mouse.get_pos()  # Get the current mouse position
+            
+            # Check if the mouse is over the submenu
+                    if (345 <= mouse_pos[0] <= 345 + 150 and 220 <= mouse_pos[1] <= 240 + 50):  # Change these values based on your submenu position and size
+                        self.running = True
+                        ChessData.new_game()
+                        ChessData.board_reset()
+                        self.menu_over=True
+                        ChessData.update_bot_level("easy")
+
+                    elif (345 <= mouse_pos[0] <= 345 + 150 and 350 <= mouse_pos[1] <= 370 + 50):
+                        self.menu_over=True
+                        self.game_over = True  # Exit game over state
+                        self.running = False  # Stop the main loop
+                        pygame.mixer.stop()  # Stop all sounds
+                        pygame.mixer.quit()  # Quit the mixer
+                        pygame.quit()  # Quit Pygame                   

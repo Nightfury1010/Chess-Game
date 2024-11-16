@@ -48,7 +48,11 @@ class ChessBoard(pygame.sprite.Sprite):
         text_surface = self.font.render(text, True, (255, 255, 255))  # White text color
         
         # Position the text within the submenu
-        text_pos = (position[0] + 35+(9-len(text))*5, position[1] + (size[1] // 2 - text_surface.get_height() // 2))
+        center_x = position[0] + size[0] / 2
+        center_y = position[1] + size[1] / 2
+
+        # Calculate the position for the text to be centered in the box
+        text_pos = (center_x - text_surface.get_width() // 2, center_y - text_surface.get_height() // 2)
         
         # Blit the text onto the screen
         screen.blit(text_surface, text_pos)
