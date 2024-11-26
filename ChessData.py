@@ -11,7 +11,7 @@ class ChessData:
         ['black_rook1', 'black_pawn1', '.', '.', '.', '.', 'white_pawn1', 'white_rook1'],
         ['black_knight1', 'black_pawn2', '.', '.', '.', '.', 'white_pawn2', 'white_knight1'],
         ['black_bishop1', 'black_pawn3', '.', '.', '.', '.', 'white_pawn3', 'white_bishop1'],
-        ['black_queen', 'black_pawn4', '.', '.', '.', '.', 'white_pawn4', 'white_queen'],
+        ['black_queen1', 'black_pawn4', '.', '.', '.', '.', 'white_pawn4', 'white_queen1'],
         ['black_king', 'black_pawn5', '.', '.', '.', '.', 'white_pawn5', 'white_king'],
         ['black_bishop2', 'black_pawn6', '.', '.', '.', '.', 'white_pawn6', 'white_bishop2'],
         ['black_knight2', 'black_pawn7', '.', '.', '.', '.', 'white_pawn7', 'white_knight2'],
@@ -21,7 +21,7 @@ class ChessData:
         ['black_rook1', 'black_pawn1', '.', '.', '.', '.', 'white_pawn1', 'white_rook1'],
         ['black_knight1', 'black_pawn2', '.', '.', '.', '.', 'white_pawn2', 'white_knight1'],
         ['black_bishop1', 'black_pawn3', '.', '.', '.', '.', 'white_pawn3', 'white_bishop1'],
-        ['black_queen', 'black_pawn4', '.', '.', '.', '.', 'white_pawn4', 'white_queen'],
+        ['black_queen1', 'black_pawn4', '.', '.', '.', '.', 'white_pawn4', 'white_queen1'],
         ['black_king', 'black_pawn5', '.', '.', '.', '.', 'white_pawn5', 'white_king'],
         ['black_bishop2', 'black_pawn6', '.', '.', '.', '.', 'white_pawn6', 'white_bishop2'],
         ['black_knight2', 'black_pawn7', '.', '.', '.', '.', 'white_pawn7', 'white_knight2'],
@@ -35,6 +35,8 @@ class ChessData:
     player_color=""
     bot_move=[]
     bot_piece=""
+    promotion_piece=''
+    promotion_location=[]
 
 
     @classmethod
@@ -173,4 +175,16 @@ class ChessData:
     def update_bot_move(cls,move,piece):
         cls.bot_move=move
         cls.bot_piece=piece
+        
+    @classmethod
+    def get_promotion_piece(cls):
+        if cls.promotion_piece != "" :
+            return cls.promotion_location,cls.promotion_piece
+        else:
+            return False
+    
+    @classmethod
+    def update_promotion_piece(cls,location,piece):
+        cls.promotion_piece = piece
+        cls.promotion_location = location
     

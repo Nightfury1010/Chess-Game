@@ -3,6 +3,7 @@ import math
 import numpy as np
 import random
 from ChessData import ChessData
+import time
 
 points = []
 for i in range(8):  # For rows (Y values)
@@ -89,13 +90,18 @@ class ChessPiece(pygame.sprite.Sprite):
                                 piece_position[3][new_y]=ChessData.get_chess_turn()+"_rook1"
                                 piece_position[0][new_y]="."
                                 ChessData.update_get_castling_side("left")
+                        promotion = 7 if ChessData.get_chess_turn()=="black" else 0
+                        if ('pawn' in ChessData.get_active_piece() and new_y==promotion):
+                            ChessData.update_promotion_piece((int(new_x),int(new_y)),ChessData.get_active_piece())
+                            
                         piece_position[old_x][old_y]="."
                         piece_position[new_x][new_y]=ChessData.get_active_piece()   
                         ChessData.update_chess_board(piece_position)
                         ChessData.false_outline_flag()
                         ChessData.update_chess_turn()
                         ChessData.update_has_piece_moved(ChessData.get_active_piece())
-                        ChessData.update_active_piece("")
+                        if not ChessData.get_removed_piece():
+                            ChessData.update_active_piece("")
 
                         king_location = np.argwhere(ChessData.get_chess_board() == (ChessData.get_chess_turn() + "_king"))[0]
                         if self.is_piece_in_check(ChessData.get_chess_turn(),ChessData.get_chess_board(),king_location):
@@ -103,12 +109,11 @@ class ChessPiece(pygame.sprite.Sprite):
                                 ChessData.game_over()
                         
                         if self.bot=="easy":
-                            moves,piece = self.easy_bot_algorithm()
-                            if moves is None:
+                            if self.easy_bot_algorithm() is None:
                                 ChessData.game_over()
                                 break
+                            moves,piece = self.easy_bot_algorithm()
                             new_x,new_y=moves
-                            print(moves,piece)
                             new_x,new_y=int(new_x),int(new_y)
                             ChessData.update_active_piece(piece)
                             ChessData.update_bot_move(moves,piece)
@@ -384,7 +389,7 @@ class ChessPiece(pygame.sprite.Sprite):
             return False
 
     def easy_bot_algorithm(self):
-        print("Starting new one")
+        
         new_chessboard = ChessData.get_chess_board().flatten()
         last_option = None
         for piece in new_chessboard :
@@ -405,7 +410,6 @@ class ChessPiece(pygame.sprite.Sprite):
                 possible_moves_by_bot=removed_king_in_check
                 
                 for moves in possible_moves_by_bot:
-                    print(moves)
                     random_number = random.randint(0, 100)
                     if moves.any():
                         last_option= (moves,piece)

@@ -3,7 +3,7 @@ import numpy as np
 from ChessBoard import ChessBoard
 from ChessPiece import ChessPiece  # Import your piece class
 from ChessData import ChessData
-
+import time
 
 
 class GameController:
@@ -26,10 +26,13 @@ class GameController:
         self.piece_move_sound=pygame.mixer.Sound("Assets/move.mp3")
         self.check_mate_sound=pygame.mixer.Sound("Assets/game over checkmate.mp3")
         self.castling_sound=pygame.mixer.Sound("Assets/castling.mp3")
+        self.promotion_sound=pygame.mixer.Sound("Assets/promotion.mp3")
         self.menu_over = False
         self.singleplayer = False
         self.choose_difficulty = False
-        self.bot=""
+        self.bot = None
+        
+
         
         
     def initialize_pieces(self):
@@ -49,7 +52,7 @@ class GameController:
         self.chessboard.add_piece(ChessPiece("white_bishop2", "white", "Assets/BishopWhite.png", [520, 550], self.screen))
 
         self.chessboard.add_piece(ChessPiece("white_king", "white", "Assets/KingWhite.png", [420, 550], self.screen))
-        self.chessboard.add_piece(ChessPiece("white_queen", "white", "Assets/QueenWhite.png", [320, 550], self.screen))
+        self.chessboard.add_piece(ChessPiece("white_queen1", "white", "Assets/QueenWhite.png", [320, 550], self.screen))
 
         self.chessboard.add_piece(ChessPiece("white_knight1", "white", "Assets/KnightWhite.png", [120, 550], self.screen))
         self.chessboard.add_piece(ChessPiece("white_knight2", "white", "Assets/KnightWhite.png", [620, 550], self.screen))
@@ -61,7 +64,7 @@ class GameController:
         self.chessboard.add_piece(ChessPiece("black_bishop2", "black", "Assets/BishopBlack.png", [520, 7.5], self.screen))
 
         self.chessboard.add_piece(ChessPiece("black_king", "black", "Assets/KingBlack.png", [420, 7.5], self.screen))
-        self.chessboard.add_piece(ChessPiece("black_queen", "black", "Assets/QueenBlack.png", [320, 7.5], self.screen))
+        self.chessboard.add_piece(ChessPiece("black_queen1", "black", "Assets/QueenBlack.png", [320, 7.5], self.screen))
 
         self.chessboard.add_piece(ChessPiece("black_knight1", "black", "Assets/KnightBlack.png", [120, 7.5], self.screen))
         self.chessboard.add_piece(ChessPiece("black_knight2", "black", "Assets/KnightBlack.png", [620, 7.5], self.screen))
@@ -91,7 +94,7 @@ class GameController:
             if ChessData.get_bot_move():
                 location, piece_one = ChessData.get_bot_move()
                 piece_type = piece_one[6:-1].capitalize() + piece_one[:5].capitalize()
-                if "queen" in piece_one or 'king' in piece_one:
+                if 'king' in piece_one:
                     piece_type = piece_one[6:].capitalize() + piece_one[:5].capitalize()
                 self.chessboard.remove_piece(piece_one)
                 x,y = location
@@ -101,6 +104,7 @@ class GameController:
                 self.chessboard.add_piece(ChessPiece(piece_one, piece_one[:5], f"Assets/{piece_type}.png", [x*100+20, 7.5+y*77.5], self.screen))
                 ChessData.update_bot_move([],"")
 
+            
 
             if ChessData.get_castling_side()=="left":
                 color="white"
@@ -131,6 +135,7 @@ class GameController:
                 self.chessboard.remove_piece(ChessData.get_removed_piece())
                 self.piece_capture_sound.play()
                 ChessData.update_removed_piece("")
+                ChessData.update_active_piece("")
 
             
                 
@@ -139,11 +144,95 @@ class GameController:
             # Update pieces
             for piece in self.chessboard.pieces:
                 piece.update()
-                
+            
+               
 
             self.screen.fill((255, 255, 255))  # Fill screen with white
             self.chessboard.draw(self.screen)  # Draw the chessboard and pieces
             
+            if ChessData.get_promotion_piece():
+                
+                self.menu_over = False
+                while(not self.menu_over):
+                   
+                    pygame.display.flip()
+                    main_menu = pygame.image.load("Assets/wooden_board.png").convert_alpha()  # Use your own marker image here
+                    main_menu = pygame.transform.scale(main_menu, (300, 380)) 
+                    self.screen.blit(main_menu, (270, 162.5))
+                    font = pygame.font.Font(None, 40)  # Use default font and set size
+                    winner_text = "Promotion: " 
+                    game_over_text = font.render(winner_text, True, (0, 0, 0))  # Black text
+                    self.screen.blit(game_over_text, (345, 200))
+                    self.chessboard.display_sub_menu(self.screen,image_path="Assets/Asset 9@4x.png",text="Queen",size=(150, 50),position=(345, 240))
+                    self.chessboard.display_sub_menu(self.screen,image_path="Assets/Asset 9@4x.png",text="Rook",size=(150, 50),position=(345, 305))
+                    self.chessboard.display_sub_menu(self.screen,image_path="Assets/Asset 9@4x.png",text="Bishop",size=(150, 50),position=(345, 370))
+                    self.chessboard.display_sub_menu(self.screen,image_path="Assets/Asset 9@4x.png",text="Knight",size=(150, 50),position=(345, 435))
+                    location, piece = ChessData.get_promotion_piece()
+                    print("this is promotion piece: ",ChessData.get_promotion_piece())
+                    x , y = location
+                    x , y= int(x)*100+20, int(y)*77.5+7.5
+                    color = 'white' if ChessData.get_chess_turn()=='black' else 'black'
+                    if ChessData.get_bot():
+                        color = 'white' if color == 'black' else 'white'
+                    self.chessboard.remove_piece(piece)
+                    promoted_piece_name = None
+                    for event in pygame.event.get():
+                        if event.type == pygame.QUIT:
+                            self.game_over = False
+                            self.running = False 
+                        if event.type == pygame.MOUSEBUTTONDOWN:
+                            mouse_pos = pygame.mouse.get_pos()  # Get the current mouse position
+
+                    # Check if the mouse is over the submenu
+                            if (345 <= mouse_pos[0] <= 345 + 150 and 220 <= mouse_pos[1] <= 240 + 50):  # Change these values based on your submenu position and size
+                                self.menu_over=True
+                                ChessData.update_promotion_piece(None,'')
+                                try:
+                                    self.queen_count+=1
+                                except:
+                                    self.queen_count=2
+                                finally:
+                                    promoted_piece_name = f"{color}_queen{self.queen_count}"
+                                    self.chessboard.add_piece(ChessPiece(f"{color}_queen{self.queen_count}", color, f"Assets/Queen{color.capitalize()}.png", [x, y], self.screen))    
+
+
+                            elif (345 <= mouse_pos[0] <= 345 + 150 and 305 <= mouse_pos[1] <= 305 + 50):  # Change these values based on your submenu position and size
+                                self.menu_over=True
+                                ChessData.update_promotion_piece(None,'')
+                                try:
+                                    self.rook_count+=1
+                                except:
+                                    self.rook_count=3
+                                finally:
+                                    promoted_piece_name = f"{color}_rook{self.rook_count}"
+                                    self.chessboard.add_piece(ChessPiece(f"{color}_rook{self.rook_count}", color, f"Assets/Rook{color.capitalize()}.png", [x, y], self.screen)) 
+
+                            elif (345 <= mouse_pos[0] <= 345 + 150 and 350 <= mouse_pos[1] <= 370 + 50):
+                                self.menu_over=True
+                                ChessData.update_promotion_piece(None,'')
+                                try:
+                                    self.bishop_count+=1
+                                except:
+                                    self.bishop_count=3
+                                finally:
+                                    promoted_piece_name = f"{color}_bishop{self.bishop_count}"
+                                    self.chessboard.add_piece(ChessPiece(f"{color}_bishop{self.bishop_count}", color, f"Assets/Bishop{color.capitalize()}.png", [x, y], self.screen)) 
+
+                            elif (345 <= mouse_pos[0] <= 345 + 150 and 350 <= mouse_pos[1] <= 435 + 50):
+                                self.menu_over=True
+                                ChessData.update_promotion_piece(None,'')
+                                try:
+                                    self.knight_count+=1
+                                except:
+                                    self.knight_count=3
+                                finally:
+                                    promoted_piece_name = f"{color}_knight{self.knight_count}"
+                                    self.chessboard.add_piece(ChessPiece(f"{color}_knight{self.knight_count}", color, f"Assets/Knight{color.capitalize()}.png", [x, y], self.screen)) 
+                self.promotion_sound.play()
+                temp_chessboard = ChessData.get_chess_board().copy()
+                temp_chessboard[int((x-20)/100)][int((y-7.5)/77.5)]=promoted_piece_name
+                ChessData.update_chess_board(temp_chessboard) 
+
             # Show possible moves for all pieces (if any)
             for piece in self.chessboard.pieces:
                 piece.show_possible_moves(current_event)
