@@ -1,9 +1,9 @@
 import pygame
 import numpy as np
 from ChessBoard import ChessBoard
-from ChessPiece import ChessPiece  # Import your piece class
+from ChessPiece import ChessPiece,is_piece_in_check  # Import your piece class
 from ChessData import ChessData
-import time
+import random
 
 
 class GameController:
@@ -91,18 +91,55 @@ class GameController:
                 self.piece_move_sound.play()
                 ChessData.update_move_sound(False)
 
-            if ChessData.get_bot_move():
-                location, piece_one = ChessData.get_bot_move()
-                piece_type = piece_one[6:-1].capitalize() + piece_one[:5].capitalize()
-                if 'king' in piece_one:
-                    piece_type = piece_one[6:].capitalize() + piece_one[:5].capitalize()
-                self.chessboard.remove_piece(piece_one)
-                x,y = location
-                x,y= int(x),int(y)
-                piece_two = ChessData.get_chess_board()[x][y]
-                self.chessboard.remove_piece(piece_two)
-                self.chessboard.add_piece(ChessPiece(piece_one, piece_one[:5], f"Assets/{piece_type}.png", [x*100+20, 7.5+y*77.5], self.screen))
-                ChessData.update_bot_move([],"")
+            
+                
+            if ChessData.get_bot()=="easy" and ChessData.get_chess_turn()=='black':
+                if easy_bot_algorithm(1) is None:
+                    ChessData.game_over()
+                    
+                else:
+                    moves,piece = easy_bot_algorithm(1)
+                    new_x,new_y=moves
+                    new_x,new_y=int(new_x),int(new_y)
+                    ChessData.update_active_piece(piece)
+                    ChessData.update_bot_move(moves,piece)
+                    self.updated_flag=True
+                    piece_position=ChessData.get_chess_board()
+                    old_x,old_y=np.argwhere(ChessData.get_chess_board()==ChessData.get_active_piece())[0]
+                    if ChessData.get_chess_board()[new_x][new_y] != ".":  # If there is a piece in the target square
+                        captured_piece = ChessData.get_chess_board()[new_x][new_y]  # Get the captured piece
+                        ChessData.update_removed_piece(captured_piece)  # Update removed pieces list
+                    else:
+                        ChessData.update_move_sound(True)
+                            
+                    if ('king' in ChessData.get_active_piece()):
+                        if(new_x==6 and ChessPiece.is_right_castling_availabe()):
+                            piece_position[5][new_y]=ChessData.get_chess_turn()+"_rook2"
+                            piece_position[7][new_y]="."
+                            ChessData.update_get_castling_side("right")
+                        if(new_x==2 and ChessPiece.is_left_castling_availabe()):
+                            piece_position[3][new_y]=ChessData.get_chess_turn()+"_rook1"
+                            piece_position[0][new_y]="."
+                            ChessData.update_get_castling_side("left")
+                    piece_position[old_x][old_y]="."
+                    piece_position[new_x][new_y]=ChessData.get_active_piece()   
+                    ChessData.update_chess_board(piece_position)
+                    ChessData.update_chess_turn()
+                    ChessData.update_has_piece_moved(ChessData.get_active_piece())
+                    ChessData.update_active_piece("")
+
+                    piece_type = piece[6:-1].capitalize() + piece[:5].capitalize()
+                    if 'king' in piece:
+                        piece_type = piece[6:].capitalize() + piece[:5].capitalize()
+                    self.chessboard.remove_piece(piece)
+                    x,y = moves
+                    x,y= int(x),int(y)
+                    piece_two = ChessData.get_chess_board()[x][y]
+                    self.chessboard.remove_piece(piece_two)
+                    self.chessboard.add_piece(ChessPiece(piece, piece[:5], f"Assets/{piece_type}.png", [x*100+20, 7.5+y*77.5], self.screen))
+                    ChessData.update_bot_move([],"")
+
+
 
             
 
@@ -132,7 +169,9 @@ class GameController:
 
 
             if ChessData.get_removed_piece():
-                self.chessboard.remove_piece(ChessData.get_removed_piece())
+                for removed_piece in ChessData.get_removed_piece():
+                    self.chessboard.remove_piece(removed_piece)
+                    print(f'{removed_piece} is removed')
                 self.piece_capture_sound.play()
                 ChessData.update_removed_piece("")
                 ChessData.update_active_piece("")
@@ -168,7 +207,6 @@ class GameController:
                     self.chessboard.display_sub_menu(self.screen,image_path="Assets/Asset 9@4x.png",text="Bishop",size=(150, 50),position=(345, 370))
                     self.chessboard.display_sub_menu(self.screen,image_path="Assets/Asset 9@4x.png",text="Knight",size=(150, 50),position=(345, 435))
                     location, piece = ChessData.get_promotion_piece()
-                    print("this is promotion piece: ",ChessData.get_promotion_piece())
                     x , y = location
                     x , y= int(x)*100+20, int(y)*77.5+7.5
                     color = 'white' if ChessData.get_chess_turn()=='black' else 'black'
@@ -357,3 +395,87 @@ class GameController:
                         pygame.mixer.stop()  # Stop all sounds
                         pygame.mixer.quit()  # Quit the mixer
                         pygame.quit()  # Quit Pygame                   
+
+import numpy as np
+import random
+
+def easy_bot_algorithm(depth):
+    chessboard = ChessData.get_chess_board()
+    valid_moves = []
+    
+    color = "black" if depth % 2 ==1 else "white" 
+    # Cache positions of all black pieces
+    pieces_positions = {
+        (x, y): chessboard[x, y]
+        for x, y in zip(*np.where(chessboard != "."))
+        if color in str(chessboard[x, y])
+    }
+
+    # Pre-define piece merits
+    piece_merits = {
+        "queen": 9,
+        "rook": 5,
+        "knight": 3,
+        "bishop": 3,
+        "pawn": 1
+    }
+
+    # Find the black king's position
+    
+    king_location = tuple(np.argwhere(chessboard == f"{color}_king")[0])
+
+    
+    # Iterate through each black piece
+    for (old_x, old_y), piece in pieces_positions.items():
+        possible_moves = ChessPiece.get_possible_moves(piece, chessboard)
+        removed_king_in_check=np.empty((0,2))
+            # Get the current chessboard state
+        current_chessboard = ChessData.get_chess_board()
+
+            # Initialize the array to store valid moves
+        removed_king_in_check = np.empty((0, 2))
+
+            # Get the position of the active piece
+        old_x, old_y = np.argwhere(current_chessboard == piece)[0]
+
+            # Removing future checks
+        for moves in possible_moves:  
+            new_x, new_y = moves
+            new_x, new_y = int(new_x), int(new_y)
+            original_target = current_chessboard[new_x][new_y]  
+            original_source = current_chessboard[old_x][old_y] 
+            current_chessboard[new_x][new_y] = piece
+            current_chessboard[old_x][old_y] = "."
+            if (np.argwhere(current_chessboard == f"{color}_king").size ==0):
+                print(current_chessboard)
+            king_location = np.argwhere(current_chessboard == f"{color}_king")[0]
+            if not is_piece_in_check(ChessData.get_chess_turn(), current_chessboard, king_location):
+                removed_king_in_check = np.append(removed_king_in_check, [[new_x, new_y]], axis=0)
+            current_chessboard[new_x][new_y] = original_target
+            current_chessboard[old_x][old_y] = original_source
+
+        # Finding moves
+        for new_x, new_y in removed_king_in_check:
+            new_x, new_y = int(new_x), int(new_y)
+            target_square = chessboard[new_x, new_y]
+            if color in str(target_square):
+                continue
+            merit = next(
+                (value for key, value in piece_merits.items() if key in str(target_square)),0
+            )
+            original_target = chessboard[new_x, new_y]
+            chessboard[new_x, new_y], chessboard[old_x, old_y] = piece, "."
+            if not is_piece_in_check(color, chessboard, king_location):
+                valid_moves.append(((new_x, new_y), piece, merit))
+            chessboard[new_x, new_y], chessboard[old_x, old_y] = original_target, piece
+
+    # Sort valid moves by merit and pick one
+    if valid_moves:
+        valid_moves.sort(key=lambda x: x[2], reverse=True)
+        highest_merit = valid_moves[0][2]
+        top_moves = [move for move in valid_moves if move[2] == highest_merit]
+        selected_move = random.choice(top_moves)
+        return selected_move[0],selected_move[1]
+
+    # If no valid moves are found
+    return None

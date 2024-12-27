@@ -28,7 +28,7 @@ class ChessData:
         ['black_rook2', 'black_pawn8', '.', '.', '.', '.', 'white_pawn8', 'white_rook2']
     ])
     move_sound=False
-    removed_pieces = ""
+    removed_pieces = []
     dragging_flag=False
     castle=""
     has_piece_moved={'black_king':False,'white_king':False,'black_rook2':False,'black_rook1':False,'white_rook1':False,'white_rook2':False}
@@ -92,8 +92,12 @@ class ChessData:
     
     @classmethod
     def update_removed_piece(cls,new_removed_piece):
-        cls.removed_pieces=new_removed_piece
+        if new_removed_piece != '':
+            cls.removed_pieces.append(new_removed_piece)
+        else:
+            cls.removed_pieces = []
 
+    
     @classmethod
     def get_move_sound(cls):
         return cls.move_sound
