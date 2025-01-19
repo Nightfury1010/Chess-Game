@@ -103,6 +103,12 @@ class ChessPiece(pygame.sprite.Sprite):
                         promotion = 7 if ChessData.get_chess_turn()=="black" else 0
                         if ('pawn' in ChessData.get_active_piece() and new_y==promotion):
                             ChessData.update_promotion_piece((int(new_x),int(new_y)),ChessData.get_active_piece())
+                        if ChessData.get_en_passant_piece():
+                            if 'pawn' in ChessData.get_active_piece() and np.all(np.isclose((new_x,new_y),(ChessData.get_en_passant_piece()['final'][0],ChessData.get_en_passant_piece()['final'][1]))):
+                                ChessData.update_removed_piece(ChessData.update_removed_piece(ChessData.get_chess_board()[new_x][old_y]))
+                                new_board = ChessData.get_chess_board()[new_x][old_y]='.'
+                                ChessData.update_chess_board(new_board)
+
                             
                         piece_position[old_x][old_y]="."
                         piece_position[new_x][new_y]=ChessData.get_active_piece()   
@@ -117,8 +123,7 @@ class ChessPiece(pygame.sprite.Sprite):
                         if is_piece_in_check(ChessData.get_chess_turn(),ChessData.get_chess_board(),king_location):
                             if is_it_checkmate():
                                 ChessData.game_over()
-                        
-                
+                        ChessData.update_enpassant_count()
                             
                 
                 if(not self.updated_flag):

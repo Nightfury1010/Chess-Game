@@ -31,7 +31,7 @@ class GameController:
         self.singleplayer = False
         self.choose_difficulty = False
         self.bot = None
-        
+        self.piece_count= {'black_queen':1,'black_bishop':2,'black_knight':2,'black_rook':2,'white_queen':1,'white_bishop':2,'white_knight':2,'white_rook':2}
 
         
         
@@ -181,7 +181,6 @@ class GameController:
         if ChessData.get_removed_piece():
             for removed_piece in ChessData.get_removed_piece():
                 self.chessboard.remove_piece(removed_piece)
-                print(f'{removed_piece} is removed')
             self.piece_capture_sound.play()
             ChessData.update_removed_piece("")
             ChessData.update_active_piece("")
@@ -196,8 +195,8 @@ class GameController:
                 x, y = map(int, location)
                 x, y = x * 100 + 20, y * 77.5 + 7.5
                 color = 'white' if ChessData.get_chess_turn() == 'black' else 'black'
-                if ChessData.get_bot():
-                    color = 'white' if color == 'black' else 'white'
+                # if ChessData.get_bot():
+                #     color = 'white' if color == 'black' else 'white'
                 self.chessboard.remove_piece(piece)
                 promoted_piece_name = None
                 for event in pygame.event.get():
@@ -211,6 +210,7 @@ class GameController:
                     if event.type == pygame.MOUSEBUTTONDOWN:
                         mouse_pos = pygame.mouse.get_pos()
                         promoted_piece_name = self.check_promotion_selection(mouse_pos, color, x, y)
+                        print(promoted_piece_name)
                 if promoted_piece_name:
                     self.promotion_sound.play()
                     temp_chessboard = ChessData.get_chess_board().copy()
@@ -222,8 +222,8 @@ class GameController:
         main_menu = pygame.transform.scale(main_menu, (300, 380))
         self.screen.blit(main_menu, (270, 162.5))
         font = pygame.font.Font(None, 40)
-        winner_text = "Promotion: "
-        game_over_text = font.render(winner_text, True, (0, 0, 0))
+        promotion_text = "Promotion: "
+        game_over_text = font.render(promotion_text, True, (0, 0, 0))
         self.screen.blit(game_over_text, (345, 200))
         self.chessboard.display_sub_menu(self.screen, image_path="Assets/Asset 9@4x.png", text="Queen", size=(150, 50), position=(345, 240))
         self.chessboard.display_sub_menu(self.screen, image_path="Assets/Asset 9@4x.png", text="Rook", size=(150, 50), position=(345, 305))
@@ -252,16 +252,9 @@ class GameController:
         return promoted_piece_name
 
     def promote_piece(self, color, piece_type, x, y):
-        count_attr = f"{piece_type}_count"
-        try:
-            count = getattr(self, count_attr)
-            setattr(self, count_attr, count + 1)
-        except AttributeError:
-            setattr(self, count_attr, 1)
-        finally:
-            count = getattr(self, count_attr)
-            promoted_piece_name = f"{color}_{piece_type}{count}"
-            self.chessboard.add_piece(ChessPiece(promoted_piece_name, color, f"Assets/{piece_type.capitalize()}{color.capitalize()}.png", [x, y], self.screen))
+        self.piece_count[f'{color}_{piece_type}'] += 1
+        promoted_piece_name = f"{color}_{piece_type}{self.piece_count[f'{color}_{piece_type}']}"
+        self.chessboard.add_piece(ChessPiece(promoted_piece_name, color, f"Assets/{piece_type.capitalize()}{color.capitalize()}.png", [x, y], self.screen))
         return promoted_piece_name  # Limit to 60 frames per second
         
         
@@ -333,6 +326,7 @@ class GameController:
                         ChessData.new_game()
                         self.menu_over=True
                         self.singleplayer=False
+                        self.piece_count= {'black_queen':1,'black_bishop':2,'black_knight':2,'black_rook':2,'white_queen':1,'white_bishop':2,'white_knight':2,'white_rook':2}
                         
 
                     elif (345 <= mouse_pos[0] <= 345 + 150 and 350 <= mouse_pos[1] <= 370 + 50):
