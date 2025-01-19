@@ -37,6 +37,8 @@ class ChessData:
     bot_piece=""
     promotion_piece=''
     promotion_location=[]
+    en_passant_moves = {'initial': None, 'final': None, 'color': None,'count':0}
+    en_passant_turn = ''
 
 
     @classmethod
@@ -192,3 +194,41 @@ class ChessData:
         cls.promotion_piece = piece
         cls.promotion_location = location
     
+    @classmethod
+    def update_en_passant_piece(cls, x, y):
+        if x != -1 and y != -1:
+            if ChessData.get_chess_turn() == "white":
+                initial_positions = []
+                if x > 1 and "black_pawn" in ChessData.chess_board[x-1][y]:
+                    initial_positions.append([x-1, y])  # Use list instead of np.array
+                if x < 7 and "black_pawn" in ChessData.chess_board[x+1][y]:
+                    initial_positions.append([x+1, y])  # Use list instead of np.array
+                if initial_positions:
+                    cls.en_passant_moves = {'initial': initial_positions, 'final': [x, y+1], 'color': 'black','count':2}  # Use list instead of np.array
+            else:
+                initial_positions = []
+                if x > 1 and "white_pawn" in ChessData.chess_board[x-1][y]:
+                    initial_positions.append([x-1, y])  # Use list instead of np.array
+                if x < 7 and "white_pawn" in ChessData.chess_board[x+1][y]:
+                    initial_positions.append([x+1, y])  # Use list instead of np.array
+                if initial_positions:
+                    cls.en_passant_moves = {'initial': initial_positions, 'final': [x, y-1], 'color': 'white','count':2}  # Use list instead of np.array
+        else:
+            cls.en_passant_moves = {'initial': None, 'final': None, 'color': None,'count':0}
+
+    @classmethod
+    def get_en_passant_piece(cls):
+        if cls.en_passant_moves['initial'] is None:
+            return False
+        elif ChessData.get_chess_turn() == "white" and cls.en_passant_moves['color'] == "white" and cls.en_passant_moves['count']>0:
+            return cls.en_passant_moves
+        elif ChessData.get_chess_turn() == "black" and cls.en_passant_moves['color'] == "black" and cls.en_passant_moves['count']>0:
+            return cls.en_passant_moves
+        elif cls.en_passant_moves['count']==0:
+            ChessData.update_en_passant_piece(-1,-1)
+            return False
+        
+    @classmethod
+    def update_enpassant_count(cls):
+        if(cls.en_passant_moves['count'] >0):
+            cls.en_passant_moves['count']-=1
