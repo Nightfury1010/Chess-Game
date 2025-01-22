@@ -1,5 +1,5 @@
 import numpy as np
-
+from Node import ChessHistory
 class ChessData:
     bot=""
     game=True
@@ -39,7 +39,12 @@ class ChessData:
     promotion_location=[]
     en_passant_moves = {'initial': None, 'final': None, 'color': None,'count':0}
     en_passant_turn = ''
-
+    board_history = ChessHistory()
+    moves_made = []
+    dict_x = {0: 'a', 1: 'b', 2: 'c', 3: 'd', 4: 'e', 5: 'f', 6: 'g', 7: 'h', 'a': 0, 'b': 1, 'c': 2, 'd': 3, 'e': 4, 'f': 5, 'g': 6, 'h': 7}
+    old = []
+    new = []
+    show_suggested_moves = False
 
     @classmethod
     def get_chess_board(cls):
@@ -232,3 +237,50 @@ class ChessData:
     def update_enpassant_count(cls):
         if(cls.en_passant_moves['count'] >0):
             cls.en_passant_moves['count']-=1
+
+    @classmethod
+    def add_moves_to_history(cls, state):
+        cls.moves_made.append(f"{cls.dict_x[state['old'][0]]}{8-state['old'][1]}{cls.dict_x[state['new'][0]]}{8-state['new'][1]}")
+        cls.board_history.add_state(state)
+
+    @classmethod
+    def get_current_state(cls):
+        return cls.board_history.get_current_state()
+    
+    @classmethod
+    def undo(cls):
+        return cls.board_history.undo()
+    
+    @classmethod
+    def redo(cls):
+        return cls.board_history.redo()
+    
+    @classmethod
+    def get_moves_made(cls):
+        return cls.moves_made
+    
+    @classmethod
+    def reset_moves_made(cls):
+        cls.moves_made = []
+
+    @classmethod
+    def update_suggested_moves(cls,move):
+        if move == None:
+            cls.old = []
+            cls.new = []
+        else:
+            print(move)
+            print(type(move))
+            old_x = cls.dict_x[move[0]]
+            old_y = 8-int(move[1])
+            new_x = cls.dict_x[move[2]]
+            new_y = 8-int(move[3])
+            cls.old= [old_x, old_y]
+            cls.new = [new_x, new_y]
+
+    @classmethod
+    def get_suggested_moves(cls):
+        if cls.old == [] and cls.new == []:
+            return False
+        return cls.old, cls.new
+

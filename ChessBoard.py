@@ -7,13 +7,18 @@ class ChessBoard(pygame.sprite.Sprite):
     def __init__(self, image_file):
         super().__init__()  # Initialize the parent class
         # Load the background image
+        self.bg_image = pygame.image.load('Assets/background.jpg').convert()
+        self.bg_rect = self.bg_image.get_rect()
+        self.image = pygame.transform.scale(self.bg_image, (800, 820))
+        
         self.font = pygame.font.Font(None, 24)
         self.image = pygame.image.load(image_file).convert()
         self.rect = self.image.get_rect()
         self.image = pygame.transform.scale(self.image, (screen_width, screen_height))
-        self.rect.topleft = (0, 0)  # Set the position of the chessboard
+        self.rect.topleft = (0, 100)  # Set the position of the chessboard
         self.pieces = pygame.sprite.Group()  # Group to hold all chess pieces
         self.piece_dict = {}  # Dictionary for quick access to pieces
+
 
 
     def add_piece(self, piece):
@@ -23,6 +28,7 @@ class ChessBoard(pygame.sprite.Sprite):
 
     def draw(self, screen):
         # Draw the chessboard image first
+        screen.blit(self.bg_image, self.bg_rect)
         screen.blit(self.image, self.rect)  # Draw the chessboard background
         self.pieces.draw(screen)  # Draw all chess pieces
 

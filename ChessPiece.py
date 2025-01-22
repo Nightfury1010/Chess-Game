@@ -9,7 +9,7 @@ points = []
 for i in range(8):  # For rows (Y values)
     for j in range(8):  # For columns (X values)
         x = 50 + j * 100  # X values: 50, 150, 250, ..., 750
-        y = 55 + i * 75   # Y values: 55, 130, 205, ..., up to 8th term
+        y = 155 + i * 75   # Y values: 55, 130, 205, ..., up to 8th term
         points.append((x, y))
 class ChessPiece(pygame.sprite.Sprite):
     def __init__(self, piece_type, color, image_file, position, screen):
@@ -39,102 +39,104 @@ class ChessPiece(pygame.sprite.Sprite):
         self.move_marker = pygame.transform.scale(self.move_marker, (100, 77.6))
 
     def update(self):
-        if self.dragging :
+        if self.dragging and ChessData.get_dragging_flag():
             # Update the position of the piece to follow the mouse cursor
             mouse_x, mouse_y = pygame.mouse.get_pos()
             self.rect.center = (mouse_x, mouse_y)
 
     def handle_event(self, event):
-        if event.type == pygame.MOUSEBUTTONDOWN:
-            x,y = find_closest_point(event.pos)
+        if event.type == pygame.MOUSEBUTTONDOWN :
+            x, y = find_closest_point(event.pos)
             x = int((x - 50) / 100)
-            y = int((y - 55) / 75)
-            piece_name=ChessData.get_chess_board()[x][y]
+            y = int((y - 155) / 75)
+            piece_name = ChessData.get_chess_board()[x][y]
             if ChessData.get_chess_turn() in piece_name:  # Ensure turn matches the piece clicked
                 ChessData.update_active_piece(piece_name)
             else:
                 return
 
-            if self.rect.collidepoint(event.pos) and not ChessData.get_dragging_flag() and self.piece_type==ChessData.get_active_piece():
+            if self.rect.collidepoint(event.pos) and not ChessData.get_dragging_flag() and self.piece_type == ChessData.get_active_piece():
                 self.dragging = True  # Start dragging the piece
-                ChessData.update_dragging_flag(True) 
+                ChessData.update_dragging_flag(True)
 
         if event.type == pygame.MOUSEBUTTONUP:
-            self.updated_flag= False
-            self.dragging = False  # Stop dragging the piece
-            ChessData.update_dragging_flag(False) 
-            released_position= find_closest_point(event.pos)
-            x,y=released_position
-            x=int((x-50)/100)
-            y=int((y-55)/75)
-            released_position=np.array([x,y])
-            
-            if self.piece_type== ChessData.get_active_piece():
-                for moves in ChessData.get_outline_moves():
-                    x,y=moves
-                    x,y=int(x),int(y)
-                    moves=np.array([x,y])
+            self.updated_flag = False
+            if self.dragging:
+                self.dragging = False  # Stop dragging the piece
+                ChessData.update_dragging_flag(False)
+                released_position = find_closest_point(event.pos)
+                x, y = released_position
+                x = int((x - 50) / 100)
+                y = int((y - 155) / 75)
+                released_position = np.array([x, y])
 
-                    if np.array_equal(released_position, moves):
-                        new_x,new_y=released_position
-                        x_position=int(new_x)*100+20
-                        y_position=int(new_y)*77.5+7.5
-                        self.rect.topleft=(x_position,y_position)
-                        self.updated_flag=True
-                        piece_position=ChessData.get_chess_board()
-                        old_x,old_y=np.argwhere(ChessData.get_chess_board()==ChessData.get_active_piece())[0]
-                        if ChessData.get_chess_board()[new_x][new_y] != ".":  # If there is a piece in the target square
-                            captured_piece = ChessData.get_chess_board()[new_x][new_y]  # Get the captured piece
-                            ChessData.update_removed_piece(captured_piece)  # Update removed pieces list
-                        else:
-                            ChessData.update_move_sound(True)
-                        
-                        if ('king' in ChessData.get_active_piece()):
-                            if(new_x==6 and self.is_right_castling_available()):
-                                piece_position[5][new_y]=ChessData.get_chess_turn()+"_rook2"
-                                piece_position[7][new_y]="."
-                                ChessData.update_get_castling_side("right")
-                            if(new_x==2 and self.is_left_castling_available()):
-                                piece_position[3][new_y]=ChessData.get_chess_turn()+"_rook1"
-                                piece_position[0][new_y]="."
-                                ChessData.update_get_castling_side("left")
-                        if ('black_pawn' in ChessData.get_active_piece() and new_y==3 and old_y==1) or ('white_pawn' in ChessData.get_active_piece() and new_y==4 and old_y==6):
-                            ChessData.update_en_passant_piece(int(new_x),int(new_y))
-                        promotion = 7 if ChessData.get_chess_turn()=="black" else 0
-                        if ('pawn' in ChessData.get_active_piece() and new_y==promotion):
-                            ChessData.update_promotion_piece((int(new_x),int(new_y)),ChessData.get_active_piece())
-                        if ChessData.get_en_passant_piece():
-                            if 'pawn' in ChessData.get_active_piece() and np.all(np.isclose((new_x,new_y),(ChessData.get_en_passant_piece()['final'][0],ChessData.get_en_passant_piece()['final'][1]))):
-                                ChessData.update_removed_piece(ChessData.update_removed_piece(ChessData.get_chess_board()[new_x][old_y]))
-                                new_board = ChessData.get_chess_board()[new_x][old_y]='.'
-                                ChessData.update_chess_board(new_board)
+                if self.piece_type == ChessData.get_active_piece():
+                    for moves in ChessData.get_outline_moves():
+                        x, y = moves
+                        x, y = int(x), int(y)
+                        moves = np.array([x, y])
 
+                        if np.array_equal(released_position, moves):
+                            new_x, new_y = released_position
+                            x_position = int(new_x) * 100 + 20
+                            y_position = int(new_y) * 77.5 + 107.5
+                            self.rect.topleft = (x_position, y_position)
+                            self.updated_flag = True
+                            piece_position = ChessData.get_chess_board()
+                            old_x, old_y = np.argwhere(ChessData.get_chess_board() == ChessData.get_active_piece())[0]
+                            if ChessData.get_chess_board()[new_x][new_y] != ".":  # If there is a piece in the target square
+                                captured_piece = ChessData.get_chess_board()[new_x][new_y]  # Get the captured piece
+                                ChessData.update_removed_piece(captured_piece)  # Update removed pieces list
+                            else:
+                                ChessData.update_move_sound(True)
+
+                            if 'king' in ChessData.get_active_piece():
+                                if new_x == 6 and self.is_right_castling_available():
+                                    piece_position[5][new_y] = ChessData.get_chess_turn() + "_rook2"
+                                    piece_position[7][new_y] = "."
+                                    ChessData.update_get_castling_side("right")
+                                if new_x == 2 and self.is_left_castling_available():
+                                    piece_position[3][new_y] = ChessData.get_chess_turn() + "_rook1"
+                                    piece_position[0][new_y] = "."
+                                    ChessData.update_get_castling_side("left")
+                            if ('black_pawn' in ChessData.get_active_piece() and new_y == 3 and old_y == 1) or ('white_pawn' in ChessData.get_active_piece() and new_y == 4 and old_y == 6):
+                                ChessData.update_en_passant_piece(int(new_x), int(new_y))
+                            promotion = 7 if ChessData.get_chess_turn() == "black" else 0
+                            if 'pawn' in ChessData.get_active_piece() and new_y == promotion:
+                                ChessData.update_promotion_piece((int(new_x), int(new_y)), ChessData.get_active_piece())
+                            if ChessData.get_en_passant_piece():
+                                if 'pawn' in ChessData.get_active_piece() and np.all(np.isclose((new_x, new_y), (ChessData.get_en_passant_piece()['final'][0], ChessData.get_en_passant_piece()['final'][1]))):
+                                    ChessData.update_removed_piece(ChessData.update_removed_piece(ChessData.get_chess_board()[new_x][old_y]))
+                                    ChessData.add_moves_to_history({"piece": ChessData.get_active_piece(), "old": [old_x, old_y], "new": [new_x, new_y], "castle": ChessData.get_castling_side(), "promotion": ChessData.get_promotion_piece(), "removed": ChessData.get_chess_board()[new_x][old_y]})
+                                    new_board = ChessData.get_chess_board()
+                                    new_board[new_x][old_y] = '.'
+                                    ChessData.update_chess_board(new_board)
+                            else:
+                                ChessData.add_moves_to_history({"piece": ChessData.get_active_piece(), "old": [old_x, old_y], "new": [new_x, new_y], "castle": ChessData.get_castling_side(), "promotion": ChessData.get_promotion_piece(), "removed": ChessData.get_chess_board()[new_x][new_y]})
                             
-                        piece_position[old_x][old_y]="."
-                        piece_position[new_x][new_y]=ChessData.get_active_piece()   
-                        ChessData.update_chess_board(piece_position)
-                        ChessData.false_outline_flag()
-                        ChessData.update_chess_turn()
-                        ChessData.update_has_piece_moved(ChessData.get_active_piece())
-                        if not ChessData.get_removed_piece():
-                            ChessData.update_active_piece("")
+                            piece_position[old_x][old_y] = "."
+                            piece_position[new_x][new_y] = ChessData.get_active_piece()
+                            ChessData.update_chess_board(piece_position)
+                            ChessData.false_outline_flag()
+                            ChessData.update_chess_turn()
+                            ChessData.update_has_piece_moved(ChessData.get_active_piece())
 
-                        king_location = np.argwhere(ChessData.get_chess_board() == (ChessData.get_chess_turn() + "_king"))[0]
-                        if is_piece_in_check(ChessData.get_chess_turn(),ChessData.get_chess_board(),king_location):
-                            if is_it_checkmate():
-                                ChessData.game_over()
-                        ChessData.update_enpassant_count()
-                            
+                            king_location = np.argwhere(ChessData.get_chess_board() == (ChessData.get_chess_turn() + "_king"))[0]
+                            if is_piece_in_check(ChessData.get_chess_turn(), ChessData.get_chess_board(), king_location):
+                                if is_it_checkmate():
+                                    ChessData.game_over()
+                            ChessData.update_enpassant_count()
+                            if not ChessData.get_removed_piece():
+                                ChessData.update_active_piece("")
+                            ChessData.update_suggested_moves(None)
+
+                    if not self.updated_flag:
+                        active_piece = ChessData.get_active_piece()
+                        x, y = np.argwhere(ChessData.get_chess_board() == active_piece)[0]
+                        x_position = x * 100 + 20
+                        y_position = y * 77.5 + 107.5
+                        self.rect.topleft = (x_position, y_position)
                 
-                if(not self.updated_flag):
-                    active_piece= ChessData.get_active_piece()
-                    x,y=np.argwhere(ChessData.get_chess_board()==active_piece)[0]
-                    x_position=x*100+20
-                    y_position=y*77.5+7.5
-                    self.rect.topleft=(x_position,y_position)
-
-                
-
                     
 
             #if position is not available go back to previous position
@@ -399,18 +401,16 @@ class ChessPiece(pygame.sprite.Sprite):
             takes_color="black"
             if "black" in ChessData.get_active_piece():
                 takes_color="white"
-                
-            
-            
+        
             for i in ChessData.get_outline_moves():
                 x, y = i
                 x,y=int(x),int(y)
                 x2 = x * 100   # Adjust x to fit the grid
-                y2 = y * 77.6   # Adjust y to fit the grid
+                y2 = 100+y * 77.6   # Adjust y to fit the grid
                 if takes_color in ChessData.get_chess_board()[x][y]:
                     self.screen.blit(self.takes_marker, (x2, y2))
-                    continue
-                self.screen.blit(self.move_marker, (x2, y2))
+                else:
+                    self.screen.blit(self.move_marker, (x2, y2))
     
     @classmethod
     def is_right_castling_available(cls):

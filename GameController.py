@@ -4,7 +4,7 @@ from ChessBoard import ChessBoard
 from ChessPiece import ChessPiece,is_piece_in_check  # Import your piece class
 from ChessData import ChessData
 import random
-
+from stockfish import Stockfish
 
 class GameController:
     
@@ -12,7 +12,7 @@ class GameController:
         pygame.init()
         pygame.mixer.init()
         self.screen_width = 800
-        self.screen_height = 620
+        self.screen_height = 820
         self.screen = pygame.display.set_mode((self.screen_width, self.screen_height))
         pygame.display.set_caption("Chess Game")  # Adds a title to the window
         self.clock = pygame.time.Clock()
@@ -32,44 +32,50 @@ class GameController:
         self.choose_difficulty = False
         self.bot = None
         self.piece_count= {'black_queen':1,'black_bishop':2,'black_knight':2,'black_rook':2,'white_queen':1,'white_bishop':2,'white_knight':2,'white_rook':2}
+        self.prev_move_marker = pygame.image.load("Assets/previous_move.png").convert_alpha()  
+        self.prev_move_marker = pygame.transform.scale(self.prev_move_marker, (100, 77.6)) 
+        self.stockfish = Stockfish(path=r"C:\Users\LEGION\Desktop\Chess-Game\stockfish\stockfish-windows-x86-64-avx2.exe")
+        self.stockfish.set_fen_position("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
+        self.suggested_move_marker = pygame.image.load("Assets/suggested_move.png").convert_alpha()  
+        self.suggested_move_marker = pygame.transform.scale(self.suggested_move_marker, (100, 77.6))
 
-        
-        
     def initialize_pieces(self):
 
         for pieces in self.chessboard.piece_dict.copy():
             self.chessboard.remove_piece(pieces)
         # Add pawns
         for i in range(8):
-            self.chessboard.add_piece(ChessPiece(f"white_pawn{i + 1}", "white", "Assets/PawnWhite.png", [i * 100 + 20, 472.5], self.screen))
-            self.chessboard.add_piece(ChessPiece(f"black_pawn{i + 1}", "black", "Assets/PawnBlack.png", [i * 100 + 20, 85], self.screen))
+            self.chessboard.add_piece(ChessPiece(f"white_pawn{i + 1}", "white", "Assets/PawnWhite.png", [i * 100 + 20, 572.5], self.screen))
+            self.chessboard.add_piece(ChessPiece(f"black_pawn{i + 1}", "black", "Assets/PawnBlack.png", [i * 100 + 20, 185], self.screen))
 
         # Add other pieces
-        self.chessboard.add_piece(ChessPiece("white_rook1", "white", "Assets/RookWhite.png", [20, 550], self.screen))
-        self.chessboard.add_piece(ChessPiece("white_rook2", "white", "Assets/RookWhite.png", [720, 550], self.screen))
+        self.chessboard.add_piece(ChessPiece("white_rook1", "white", "Assets/RookWhite.png", [20, 650], self.screen))
+        self.chessboard.add_piece(ChessPiece("white_rook2", "white", "Assets/RookWhite.png", [720, 650], self.screen))
 
-        self.chessboard.add_piece(ChessPiece("white_bishop1", "white", "Assets/BishopWhite.png", [220, 550], self.screen))
-        self.chessboard.add_piece(ChessPiece("white_bishop2", "white", "Assets/BishopWhite.png", [520, 550], self.screen))
+        self.chessboard.add_piece(ChessPiece("white_bishop1", "white", "Assets/BishopWhite.png", [220, 650], self.screen))
+        self.chessboard.add_piece(ChessPiece("white_bishop2", "white", "Assets/BishopWhite.png", [520, 650], self.screen))
 
-        self.chessboard.add_piece(ChessPiece("white_king", "white", "Assets/KingWhite.png", [420, 550], self.screen))
-        self.chessboard.add_piece(ChessPiece("white_queen1", "white", "Assets/QueenWhite.png", [320, 550], self.screen))
+        self.chessboard.add_piece(ChessPiece("white_king", "white", "Assets/KingWhite.png", [420, 650], self.screen))
+        self.chessboard.add_piece(ChessPiece("white_queen1", "white", "Assets/QueenWhite.png", [320, 650], self.screen))
 
-        self.chessboard.add_piece(ChessPiece("white_knight1", "white", "Assets/KnightWhite.png", [120, 550], self.screen))
-        self.chessboard.add_piece(ChessPiece("white_knight2", "white", "Assets/KnightWhite.png", [620, 550], self.screen))
+        self.chessboard.add_piece(ChessPiece("white_knight1", "white", "Assets/KnightWhite.png", [120, 650], self.screen))
+        self.chessboard.add_piece(ChessPiece("white_knight2", "white", "Assets/KnightWhite.png", [620, 650], self.screen))
 
-        self.chessboard.add_piece(ChessPiece("black_rook1", "black", "Assets/RookBlack.png", [20,7.5], self.screen))
-        self.chessboard.add_piece(ChessPiece("black_rook2", "black", "Assets/RookBlack.png", [720, 7.5], self.screen))
+        self.chessboard.add_piece(ChessPiece("black_rook1", "black", "Assets/RookBlack.png", [20,107.5], self.screen))
+        self.chessboard.add_piece(ChessPiece("black_rook2", "black", "Assets/RookBlack.png", [720, 107.5], self.screen))
 
-        self.chessboard.add_piece(ChessPiece("black_bishop1", "black", "Assets/BishopBlack.png", [220, 7.5], self.screen))
-        self.chessboard.add_piece(ChessPiece("black_bishop2", "black", "Assets/BishopBlack.png", [520, 7.5], self.screen))
+        self.chessboard.add_piece(ChessPiece("black_bishop1", "black", "Assets/BishopBlack.png", [220, 107.5], self.screen))
+        self.chessboard.add_piece(ChessPiece("black_bishop2", "black", "Assets/BishopBlack.png", [520, 107.5], self.screen))
 
-        self.chessboard.add_piece(ChessPiece("black_king", "black", "Assets/KingBlack.png", [420, 7.5], self.screen))
-        self.chessboard.add_piece(ChessPiece("black_queen1", "black", "Assets/QueenBlack.png", [320, 7.5], self.screen))
+        self.chessboard.add_piece(ChessPiece("black_king", "black", "Assets/KingBlack.png", [420, 107.5], self.screen))
+        self.chessboard.add_piece(ChessPiece("black_queen1", "black", "Assets/QueenBlack.png", [320, 107.5], self.screen))
 
-        self.chessboard.add_piece(ChessPiece("black_knight1", "black", "Assets/KnightBlack.png", [120, 7.5], self.screen))
-        self.chessboard.add_piece(ChessPiece("black_knight2", "black", "Assets/KnightBlack.png", [620, 7.5], self.screen))
-        
+        self.chessboard.add_piece(ChessPiece("black_knight1", "black", "Assets/KnightBlack.png", [120, 107.5], self.screen))
+        self.chessboard.add_piece(ChessPiece("black_knight2", "black", "Assets/KnightBlack.png", [620, 107.5], self.screen))
         self.game_start_sound.play()
+
+        
+        
     def run(self):
         while self.running:
             current_event = None
@@ -82,10 +88,12 @@ class GameController:
                 current_event = event
                 if event.type == pygame.QUIT:
                     self.running = False
-                
+                if (0<=pygame.mouse.get_pos()[0]<=800 and 100<=pygame.mouse.get_pos()[1]<=720 and event.type == pygame.MOUSEBUTTONDOWN) or event.type==pygame.MOUSEBUTTONUP:
                 # Handle events for each piece
-                for piece in self.chessboard.pieces:
-                    piece.handle_event(event)
+                    for piece in self.chessboard.pieces:
+                        piece.handle_event(event)
+                elif (0<=pygame.mouse.get_pos()[0]<=800 and 0<=pygame.mouse.get_pos()[1]<=100 and event.type == pygame.MOUSEBUTTONDOWN):
+                        self.handle_side_menu_options(pygame.mouse.get_pos())
 
             if ChessData.get_move_sound() and not ChessData.get_castling_side():
                 self.piece_move_sound.play()
@@ -99,26 +107,31 @@ class GameController:
             # Update pieces
             for piece in self.chessboard.pieces:
                 piece.update()
-
+            
             self.screen.fill((255, 255, 255))  # Fill screen with white
             self.chessboard.draw(self.screen)  # Draw the chessboard and pieces
+            self.handle_previous_move()
+            self.handle_side_menu()
             self.handle_promotion()
-
+            
+            self.handle_suggested_move()
             # Show possible moves for all pieces (if any)
             for piece in self.chessboard.pieces:
                 piece.show_possible_moves(current_event)
+            
+            
 
             pygame.display.flip()  # Update the display
             self.clock.tick(60)  # Limit to 60 frames per second
 
     def handle_bot_move(self):
-        if ChessData.get_bot() == "easy" and ChessData.get_chess_turn() == 'black':
-            if easy_bot_algorithm(3) is None:
-                    ChessData.game_over()
-                    print('game over')
-            else:
-                moves, piece = easy_bot_algorithm(3)
+        if ChessData.get_bot() == "easy" and ChessData.get_chess_turn() == 'black':         
+            try:
+                moves, piece = easy_bot_algorithm(2)
                 self.update_board_for_bot_move(moves, piece)
+            except:
+                ChessData.game_over()
+                print('game over')
 
     def update_board_for_bot_move(self, moves, piece):
         new_x, new_y = map(int, moves)
@@ -129,6 +142,8 @@ class GameController:
         old_x, old_y = np.argwhere(piece_position == ChessData.get_active_piece())[0]
         self.capture_piece_if_needed(new_x, new_y)
         self.handle_castling_for_king(new_x, new_y, piece_position)
+        ChessData.add_moves_to_history({"piece": piece, "old": [old_x, old_y], "new": [new_x, new_y], "castle": False, "promotion": False, "removed": '.'})
+        ChessData.add_moves_to_history
         piece_position[old_x][old_y] = "."
         piece_position[new_x][new_y] = ChessData.get_active_piece()
         ChessData.update_chess_board(piece_position)
@@ -161,9 +176,7 @@ class GameController:
             piece_type = piece[6:].capitalize() + piece[:5].capitalize()
         self.chessboard.remove_piece(piece)
         x, y = map(int, moves)
-        piece_two = ChessData.get_chess_board()[x][y]
-        self.chessboard.remove_piece(piece_two)
-        self.chessboard.add_piece(ChessPiece(piece, piece[:5], f"Assets/{piece_type}.png", [x * 100 + 20, 7.5 + y * 77.5], self.screen))
+        self.chessboard.add_piece(ChessPiece(piece, piece[:5], f"Assets/{piece_type}.png", [x * 100 + 20, 107.5 + y * 77.5], self.screen))
         ChessData.update_bot_move([], "")
 
     def handle_castling(self):
@@ -171,7 +184,7 @@ class GameController:
             color = "white" if ChessData.get_chess_turn() == "black" else "black"
             rook = f"{color}_rook1" if ChessData.get_castling_side() == "left" else f"{color}_rook2"
             self.chessboard.remove_piece(rook)
-            y = 7.5 if color == "black" else 550
+            y = 107.5 if color == "black" else 650
             x = 320 if ChessData.get_castling_side() == "left" else 520
             self.chessboard.add_piece(ChessPiece(rook, color, f"Assets/Rook{color.capitalize()}.png", [x, y], self.screen))
             ChessData.update_get_castling_side("")
@@ -193,7 +206,7 @@ class GameController:
                 self.display_promotion_menu()
                 location, piece = ChessData.get_promotion_piece()
                 x, y = map(int, location)
-                x, y = x * 100 + 20, y * 77.5 + 7.5
+                x, y = x * 100 + 20, y * 77.5 + 107.5
                 color = 'white' if ChessData.get_chess_turn() == 'black' else 'black'
                 # if ChessData.get_bot():
                 #     color = 'white' if color == 'black' else 'white'
@@ -210,11 +223,10 @@ class GameController:
                     if event.type == pygame.MOUSEBUTTONDOWN:
                         mouse_pos = pygame.mouse.get_pos()
                         promoted_piece_name = self.check_promotion_selection(mouse_pos, color, x, y)
-                        print(promoted_piece_name)
                 if promoted_piece_name:
                     self.promotion_sound.play()
                     temp_chessboard = ChessData.get_chess_board().copy()
-                    temp_chessboard[int((x - 20) / 100)][int((y - 7.5) / 77.5)] = promoted_piece_name
+                    temp_chessboard[int((x - 20) / 100)][int((y - 107.5) / 77.5)] = promoted_piece_name
                     ChessData.update_chess_board(temp_chessboard)
 
     def display_promotion_menu(self):
@@ -283,6 +295,8 @@ class GameController:
                         self.running = True
                         ChessData.new_game()
                         ChessData.board_reset()
+                        ChessData.board_history.reset()
+                        self.stockfish = Stockfish(path=r"C:\Users\LEGION\Desktop\Chess-Game\stockfish\stockfish-windows-x86-64-avx2.exe")
                         self.menu_over=True
 
                     elif (345 <= mouse_pos[0] <= 345 + 150 and 350 <= mouse_pos[1] <= 370 + 50):
@@ -374,7 +388,104 @@ class GameController:
                         pygame.mixer.quit()  # Quit the mixer
                         pygame.quit()  # Quit Pygame                   
 
+    def handle_side_menu(self):
+        
+        self.chessboard.display_sub_menu(self.screen, image_path="Assets/redo.png", text="", size=(50, 50), position=(645, 25))
+        self.chessboard.display_sub_menu(self.screen, image_path="Assets/menu.png", text="", size=(50, 50), position=(715, 25))
+        self.chessboard.display_sub_menu(self.screen, image_path="Assets/suggestion.png", text="", size=(55, 50), position=(575, 25))
 
+    def handle_side_menu_options(self,mouse_pos):
+        if 645 <= mouse_pos[0] <= 695 and 25 <= mouse_pos[1] <= 75 and ChessData.board_history.get_undo_state():
+            new_chessboard = ChessData.get_chess_board().copy()
+            old_x,old_y=ChessData.get_current_state()['old']
+            new_x,new_y=ChessData.get_current_state()['new']
+            new_chessboard[old_x][old_y] = ChessData.get_current_state()['piece']
+            
+            if ChessData.get_current_state()['promotion']:
+                x,y = ChessData.get_current_state()['promotion'][0][0],ChessData.get_current_state()['promotion'][0][1]
+                self.chessboard.remove_piece(new_chessboard[x][y])
+                new_chessboard[x][y] = '.'
+                ChessData.update_chess_board(new_chessboard)
+                
+            new_chessboard[new_x][new_y] = ChessData.get_current_state()['removed']    
+            if ChessData.get_current_state()['castle']=='left':
+                rook_piece = ChessData.get_current_state()['piece'][:5] + "_rook1"
+                self.chessboard.remove_piece(rook_piece)
+                new_chessboard[0][old_y] = rook_piece
+                new_chessboard[3][old_y] = "."
+                self.chessboard.add_piece(ChessPiece(rook_piece, ChessData.get_current_state()['piece'][:5], f"Assets/Rook{ChessData.get_current_state()['piece'][:5].capitalize()}.png", [0 * 100 + 20, 107.5 + old_y * 77.5], self.screen))
+            if ChessData.get_current_state()['castle']=='right':
+                rook_piece = ChessData.get_current_state()['piece'][:5] + "_rook2"
+                self.chessboard.remove_piece(rook_piece)
+                new_chessboard[7][old_y] = rook_piece
+                new_chessboard[5][old_y] = "."
+                self.chessboard.add_piece(ChessPiece(rook_piece, ChessData.get_current_state()['piece'][:5], f"Assets/Rook{ChessData.get_current_state()['piece'][:5].capitalize()}.png", [7 * 100 + 20, 107.5 + old_y * 77.5], self.screen))   
+            if new_chessboard[new_x][new_y] != ".":
+                self.chessboard.add_piece(ChessPiece(ChessData.get_current_state()['removed'], ChessData.get_current_state()['removed'][:5], f"Assets/{ChessData.get_current_state()['removed'][6:-1].capitalize() + ChessData.get_current_state()['removed'][:5].capitalize()}.png", [new_x * 100 + 20, 107.5 + new_y * 77.5], self.screen))
+            ChessData.update_chess_board(new_chessboard)
+            self.chessboard.remove_piece(ChessData.get_current_state()['piece'])
+            image = ChessData.get_current_state()['piece'][6:-1].capitalize() 
+            if 'king' in ChessData.get_current_state()['piece']:
+                image = ChessData.get_current_state()['piece'][6:].capitalize() 
+            image += ChessData.get_current_state()['piece'][:5].capitalize() 
+            self.chessboard.add_piece(ChessPiece(ChessData.get_current_state()['piece'], ChessData.get_current_state()['piece'][:5], f"Assets/{image}.png", [old_x * 100 + 20, 107.5 + old_y * 77.5], self.screen))
+            ChessData.undo()
+
+            new_chessboard2 = ChessData.get_chess_board().copy()
+            old_x2,old_y2=ChessData.get_current_state()['old']
+            new_x2,new_y2=ChessData.get_current_state()['new']
+            new_chessboard2[old_x2][old_y2] = ChessData.get_current_state()['piece']
+            new_chessboard2[new_x2][new_y2] = ChessData.get_current_state()['removed']
+            if ChessData.get_current_state()['castle']=='left':
+                rook_piece2 = ChessData.get_current_state()['piece'][:5] + "_rook1"
+                self.chessboard.remove_piece(rook_piece2)
+                new_chessboard2[0][old_y2] = rook_piece2
+                new_chessboard2[3][old_y2] = "."
+                self.chessboard.add_piece(ChessPiece(rook_piece2, ChessData.get_current_state()['piece'][:5], f"Assets/Rook{ChessData.get_current_state()['piece'][:5].capitalize()}.png", [0 * 100 + 20, 107.5 + old_y2 * 77.5], self.screen))
+            if ChessData.get_current_state()['castle']=='right':
+                rook_piece = ChessData.get_current_state()['piece'][:5] + "_rook2"
+                self.chessboard.remove_piece(rook_piece2)
+                new_chessboard2[7][old_y2] = rook_piece2
+                new_chessboard2[5][old_y2] = "."
+                self.chessboard.add_piece(ChessPiece(rook_piece2, ChessData.get_current_state()['piece'][:5], f"Assets/Rook{ChessData.get_current_state()['piece'][:5].capitalize()}.png", [7 * 100 + 20, 107.5 + old_y2 * 77.5], self.screen))   
+            if new_chessboard2[new_x2][new_y2] != ".":
+                self.chessboard.add_piece(ChessPiece(ChessData.get_current_state()['removed'], ChessData.get_current_state()['removed'][:5], f"Assets/{ChessData.get_current_state()['removed'][6:-1].capitalize() + ChessData.get_current_state()['removed'][:5].capitalize()}.png", [new_x2 * 100 + 20, 107.5 + new_y2 * 77.5], self.screen))
+            ChessData.update_chess_board(new_chessboard2)
+            self.chessboard.remove_piece(ChessData.get_current_state()['piece'])
+            second_image = ChessData.get_current_state()['piece'][6:-1].capitalize() 
+            if 'king' in ChessData.get_current_state()['piece']:
+                second_image = ChessData.get_current_state()['piece'][6:].capitalize() 
+            second_image += ChessData.get_current_state()['piece'][:5].capitalize() 
+            self.chessboard.add_piece(ChessPiece(ChessData.get_current_state()['piece'], ChessData.get_current_state()['piece'][:5], f"Assets/{second_image}.png", [old_x2 * 100 + 20, 107.5 + old_y2 * 77.5], self.screen))
+            ChessData.undo()
+        if 715 <= mouse_pos[0] <= 765 and 25 <= mouse_pos[1] <= 75:
+            
+            pass
+        if 575 <= mouse_pos[0] <= 630 and 25 <= mouse_pos[1] <= 75:
+            # ChessData.suggestion()
+            self.stockfish.make_moves_from_current_position(ChessData.get_moves_made())
+            ChessData.reset_moves_made()
+            ChessData.update_suggested_moves(self.stockfish.get_best_move())
+    
+    def handle_previous_move(self):
+        if ChessData.get_current_state():
+            previous_move = ChessData.get_current_state()['old']
+            previous_move = [previous_move[0] * 100 , previous_move[1] * 77.5 + 100]
+            self.screen.blit(self.prev_move_marker, (previous_move[0], previous_move[1]))
+            new_move = ChessData.get_current_state()['new']
+            new_move = [new_move[0] * 100 , new_move[1] * 77.5 + 100]
+            self.screen.blit(self.prev_move_marker, (new_move[0], new_move[1]))
+
+    def handle_suggested_move(self):
+        if ChessData.get_suggested_moves():
+            suggested_move = ChessData.get_suggested_moves()
+            print(suggested_move)
+            new_suggested_move = suggested_move[0]
+            old_suggested_move = suggested_move[1]
+            new_suggested_move = [new_suggested_move[0] * 100 , new_suggested_move[1] * 77.5 + 100]
+            old_suggested_move = [old_suggested_move[0] * 100 , old_suggested_move[1] * 77.5 + 100]
+            self.screen.blit(self.suggested_move_marker, (new_suggested_move[0], new_suggested_move[1]))
+            self.screen.blit(self.suggested_move_marker, (old_suggested_move[0], old_suggested_move[1]))
 
 def minmax_algorithm(chessboard, depth, is_maximizing_player, alpha, beta):
     if depth == 0 or not ChessData.get_game():
@@ -433,7 +544,7 @@ def evaluate_board(chessboard):
             piece = chessboard[x, y]
             if piece != ".":
                 value = next((v for k, v in piece_values.items() if k in piece), 0)
-                evaluation += value if "white" in piece else -value
+                evaluation += value if "black" in piece else -value
     return evaluation
 
 def easy_bot_algorithm(depth):
@@ -457,15 +568,13 @@ def easy_bot_algorithm(depth):
             chessboard[new_x, new_y], chessboard[old_x, old_y] = piece, "."
             move_value = minmax_algorithm(chessboard, depth - 1, False, float('-inf'), float('inf'))
             chessboard[new_x, new_y], chessboard[old_x, old_y] = original_target, piece
-            if move_value > 0:
+            if move_value >= 0:
                 positive_moves.append(((new_x, new_y), piece, move_value))
             if move_value > best_value:
                 best_value = move_value
                 best_move = ((new_x, new_y), piece)
-
-    if positive_moves:
+    if positive_moves and best_value==0:
         best_move = random.choice(positive_moves)[:2]
-
     return best_move if best_move else None
 
 def get_moves(possible_moves, piece):
