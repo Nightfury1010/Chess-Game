@@ -44,8 +44,6 @@ class ChessHistory:
 
     def get_undo_state(self):
         if self.current and self.current.prev:
-            print(self.current.state)
-            print(self.current.prev.state)
-            return True
+            return self.current.prev.state
         return False
 
