@@ -142,7 +142,7 @@ class GameController:
         old_x, old_y = np.argwhere(piece_position == ChessData.get_active_piece())[0]
         self.capture_piece_if_needed(new_x, new_y)
         self.handle_castling_for_king(new_x, new_y, piece_position)
-        ChessData.add_moves_to_history({"piece": piece, "old": [old_x, old_y], "new": [new_x, new_y], "castle": False, "promotion": False, "removed": '.'})
+        ChessData.add_moves_to_history({"piece": piece, "old": [old_x, old_y], "new": [new_x, new_y], "castle": False,'enpassant':False, "promotion": False, "removed": '.'})
         ChessData.add_moves_to_history
         piece_position[old_x][old_y] = "."
         piece_position[new_x][new_y] = ChessData.get_active_piece()
@@ -396,17 +396,16 @@ class GameController:
 
     def handle_side_menu_options(self,mouse_pos):
         if 645 <= mouse_pos[0] <= 695 and 25 <= mouse_pos[1] <= 75 and ChessData.board_history.get_undo_state():
-            new_chessboard = ChessData.get_chess_board().copy()
+            new_chessboard = np.copy(ChessData.get_chess_board())
             old_x,old_y=ChessData.get_current_state()['old']
             new_x,new_y=ChessData.get_current_state()['new']
             new_chessboard[old_x][old_y] = ChessData.get_current_state()['piece']
-            
+            ChessData.update_enpassant_count('+')
+            ChessData.update_enpassant_count('+')
             if ChessData.get_current_state()['promotion']:
                 x,y = ChessData.get_current_state()['promotion'][0][0],ChessData.get_current_state()['promotion'][0][1]
                 self.chessboard.remove_piece(new_chessboard[x][y])
-                new_chessboard[x][y] = '.'
-                ChessData.update_chess_board(new_chessboard)
-                
+                new_chessboard[x][y] = '.'   
             new_chessboard[new_x][new_y] = ChessData.get_current_state()['removed']    
             if ChessData.get_current_state()['castle']=='left':
                 rook_piece = ChessData.get_current_state()['piece'][:5] + "_rook1"
@@ -422,41 +421,67 @@ class GameController:
                 self.chessboard.add_piece(ChessPiece(rook_piece, ChessData.get_current_state()['piece'][:5], f"Assets/Rook{ChessData.get_current_state()['piece'][:5].capitalize()}.png", [7 * 100 + 20, 107.5 + old_y * 77.5], self.screen))   
             if new_chessboard[new_x][new_y] != ".":
                 self.chessboard.add_piece(ChessPiece(ChessData.get_current_state()['removed'], ChessData.get_current_state()['removed'][:5], f"Assets/{ChessData.get_current_state()['removed'][6:-1].capitalize() + ChessData.get_current_state()['removed'][:5].capitalize()}.png", [new_x * 100 + 20, 107.5 + new_y * 77.5], self.screen))
+            if ChessData.get_current_state()['enpassant']:
+                sign = -1 if ChessData.get_current_state()['piece'][:5] == 'white' else 1
+                new_chessboard[new_x][new_y + sign] = new_chessboard[new_x][new_y]
+                new_chessboard[new_x][new_y] = '.'
+            if ChessData.board_history.get_undo_state()['enpassant']:
+                
+                sign = -1 if ChessData.get_current_state()['piece'][:5] == 'white' else 1
+                new_chessboard[new_x][new_y + sign] = new_chessboard[new_x][new_y]
+                new_chessboard[new_x][new_y] = '.'
             ChessData.update_chess_board(new_chessboard)
             self.chessboard.remove_piece(ChessData.get_current_state()['piece'])
             image = ChessData.get_current_state()['piece'][6:-1].capitalize() 
             if 'king' in ChessData.get_current_state()['piece']:
                 image = ChessData.get_current_state()['piece'][6:].capitalize() 
             image += ChessData.get_current_state()['piece'][:5].capitalize() 
+            
             self.chessboard.add_piece(ChessPiece(ChessData.get_current_state()['piece'], ChessData.get_current_state()['piece'][:5], f"Assets/{image}.png", [old_x * 100 + 20, 107.5 + old_y * 77.5], self.screen))
             ChessData.undo()
-
-            new_chessboard2 = ChessData.get_chess_board().copy()
+            
+            
+            ChessData.update_enpassant_count('+')
+            new_chessboard2 = np.copy(ChessData.get_chess_board())
             old_x2,old_y2=ChessData.get_current_state()['old']
             new_x2,new_y2=ChessData.get_current_state()['new']
             new_chessboard2[old_x2][old_y2] = ChessData.get_current_state()['piece']
-            new_chessboard2[new_x2][new_y2] = ChessData.get_current_state()['removed']
+            ChessData.update_enpassant_count('+')
+            ChessData.update_enpassant_count('+')
+            if ChessData.get_current_state()['promotion']:
+                x2,y2 = ChessData.get_current_state()['promotion'][0][0],ChessData.get_current_state()['promotion'][0][1]
+                self.chessboard.remove_piece(new_chessboard2[x2][y2])
+                new_chessboard2[x2][y2] = '.'   
+            new_chessboard2[new_x2][new_y2] = ChessData.get_current_state()['removed']    
             if ChessData.get_current_state()['castle']=='left':
                 rook_piece2 = ChessData.get_current_state()['piece'][:5] + "_rook1"
                 self.chessboard.remove_piece(rook_piece2)
                 new_chessboard2[0][old_y2] = rook_piece2
                 new_chessboard2[3][old_y2] = "."
-                self.chessboard.add_piece(ChessPiece(rook_piece2, ChessData.get_current_state()['piece'][:5], f"Assets/Rook{ChessData.get_current_state()['piece'][:5].capitalize()}.png", [0 * 100 + 20, 107.5 + old_y2 * 77.5], self.screen))
+                self.chessboard2.add_piece(ChessPiece(rook_piece2, ChessData.get_current_state()['piece'][:5], f"Assets/Rook{ChessData.get_current_state()['piece'][:5].capitalize()}.png", [0 * 100 + 20, 107.5 + old_y2 * 77.5], self.screen))
             if ChessData.get_current_state()['castle']=='right':
                 rook_piece = ChessData.get_current_state()['piece'][:5] + "_rook2"
                 self.chessboard.remove_piece(rook_piece2)
                 new_chessboard2[7][old_y2] = rook_piece2
                 new_chessboard2[5][old_y2] = "."
                 self.chessboard.add_piece(ChessPiece(rook_piece2, ChessData.get_current_state()['piece'][:5], f"Assets/Rook{ChessData.get_current_state()['piece'][:5].capitalize()}.png", [7 * 100 + 20, 107.5 + old_y2 * 77.5], self.screen))   
+            if ChessData.get_current_state()['enpassant']:
+                sign = 1 if ChessData.get_current_state()['piece'][:5] == 'white' else -1
+                new_chessboard2[new_x2][new_y2 + sign] = new_chessboard[new_x2][new_y2]
+                new_chessboard2[new_x2][new_y2] = '.'
+                new_y2=new_y2+sign
             if new_chessboard2[new_x2][new_y2] != ".":
-                self.chessboard.add_piece(ChessPiece(ChessData.get_current_state()['removed'], ChessData.get_current_state()['removed'][:5], f"Assets/{ChessData.get_current_state()['removed'][6:-1].capitalize() + ChessData.get_current_state()['removed'][:5].capitalize()}.png", [new_x2 * 100 + 20, 107.5 + new_y2 * 77.5], self.screen))
+                self.chessboard.add_piece(ChessPiece(ChessData.get_current_state()['removed'], ChessData.get_current_state()['removed'][:5], f"Assets/{ChessData.get_current_state()['removed'][6:-1].capitalize() + ChessData.get_current_state()['removed'][:5].capitalize()}.png", [new_x2 * 100 + 20, 107.5 + new_y2 * 77.5], self.screen)) 
+            
+            
             ChessData.update_chess_board(new_chessboard2)
             self.chessboard.remove_piece(ChessData.get_current_state()['piece'])
-            second_image = ChessData.get_current_state()['piece'][6:-1].capitalize() 
+            image2 = ChessData.get_current_state()['piece'][6:-1].capitalize() 
             if 'king' in ChessData.get_current_state()['piece']:
-                second_image = ChessData.get_current_state()['piece'][6:].capitalize() 
-            second_image += ChessData.get_current_state()['piece'][:5].capitalize() 
-            self.chessboard.add_piece(ChessPiece(ChessData.get_current_state()['piece'], ChessData.get_current_state()['piece'][:5], f"Assets/{second_image}.png", [old_x2 * 100 + 20, 107.5 + old_y2 * 77.5], self.screen))
+                image2 = ChessData.get_current_state()['piece'][6:].capitalize() 
+            image2 += ChessData.get_current_state()['piece'][:5].capitalize() 
+            print(f'adding after2 {ChessData.get_current_state()['piece']}')
+            self.chessboard.add_piece(ChessPiece(ChessData.get_current_state()['piece'], ChessData.get_current_state()['piece'][:5], f"Assets/{image2}.png", [old_x2 * 100 + 20, 107.5 + old_y2 * 77.5], self.screen))
             ChessData.undo()
         if 715 <= mouse_pos[0] <= 765 and 25 <= mouse_pos[1] <= 75:
             

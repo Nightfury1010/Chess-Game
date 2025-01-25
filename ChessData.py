@@ -37,7 +37,7 @@ class ChessData:
     bot_piece=""
     promotion_piece=''
     promotion_location=[]
-    en_passant_moves = {'initial': None, 'final': None, 'color': None,'count':0}
+    en_passant_moves = {'initial': None, 'final': None, 'color': None,'enpassant':False,'count':0}
     en_passant_turn = ''
     board_history = ChessHistory()
     moves_made = []
@@ -234,9 +234,13 @@ class ChessData:
             return False
         
     @classmethod
-    def update_enpassant_count(cls):
-        if(cls.en_passant_moves['count'] >0):
+    def update_enpassant_count(cls,sign):
+        if(cls.en_passant_moves['count'] >0 and sign == '-'):
             cls.en_passant_moves['count']-=1
+        elif sign == '+' and cls.en_passant_moves['count'] <2:
+            cls.en_passant_moves['count']+=1
+        elif cls.en_passant_moves['count'] == 0 or cls.en_passant_moves['count'] == 2:
+            ChessData.update_en_passant_piece(-1,-1)
 
     @classmethod
     def add_moves_to_history(cls, state):

@@ -107,12 +107,12 @@ class ChessPiece(pygame.sprite.Sprite):
                             if ChessData.get_en_passant_piece():
                                 if 'pawn' in ChessData.get_active_piece() and np.all(np.isclose((new_x, new_y), (ChessData.get_en_passant_piece()['final'][0], ChessData.get_en_passant_piece()['final'][1]))):
                                     ChessData.update_removed_piece(ChessData.update_removed_piece(ChessData.get_chess_board()[new_x][old_y]))
-                                    ChessData.add_moves_to_history({"piece": ChessData.get_active_piece(), "old": [old_x, old_y], "new": [new_x, new_y], "castle": ChessData.get_castling_side(), "promotion": ChessData.get_promotion_piece(), "removed": ChessData.get_chess_board()[new_x][old_y]})
+                                    ChessData.add_moves_to_history({"piece": ChessData.get_active_piece(), "old": [old_x, old_y], "new": [new_x, new_y], "castle": ChessData.get_castling_side(), "promotion": ChessData.get_promotion_piece(),'enpassant':True, "removed": ChessData.get_chess_board()[new_x][old_y]})
                                     new_board = ChessData.get_chess_board()
                                     new_board[new_x][old_y] = '.'
                                     ChessData.update_chess_board(new_board)
                             else:
-                                ChessData.add_moves_to_history({"piece": ChessData.get_active_piece(), "old": [old_x, old_y], "new": [new_x, new_y], "castle": ChessData.get_castling_side(), "promotion": ChessData.get_promotion_piece(), "removed": ChessData.get_chess_board()[new_x][new_y]})
+                                ChessData.add_moves_to_history({"piece": ChessData.get_active_piece(), "old": [old_x, old_y], "new": [new_x, new_y], "castle": ChessData.get_castling_side(), "promotion": ChessData.get_promotion_piece(),'enpassant':False, "removed": ChessData.get_chess_board()[new_x][new_y]})
                             
                             piece_position[old_x][old_y] = "."
                             piece_position[new_x][new_y] = ChessData.get_active_piece()
@@ -125,7 +125,7 @@ class ChessPiece(pygame.sprite.Sprite):
                             if is_piece_in_check(ChessData.get_chess_turn(), ChessData.get_chess_board(), king_location):
                                 if is_it_checkmate():
                                     ChessData.game_over()
-                            ChessData.update_enpassant_count()
+                            ChessData.update_enpassant_count('-')
                             if not ChessData.get_removed_piece():
                                 ChessData.update_active_piece("")
                             ChessData.update_suggested_moves(None)
@@ -348,7 +348,7 @@ class ChessPiece(pygame.sprite.Sprite):
 
     
     def show_possible_moves(self, event):
-        if (event != None and event.type== pygame.MOUSEBUTTONDOWN):
+        if (event != None and event.type== pygame.MOUSEBUTTONDOWN and 0<=pygame.mouse.get_pos()[0]<=800 and 100<=pygame.mouse.get_pos()[1]<=720):
             ChessData.true_outline_flag()
 
             if (not ChessData.get_chess_turn() in ChessData.get_active_piece()):
