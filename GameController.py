@@ -88,6 +88,8 @@ class GameController:
                 current_event = event
                 if event.type == pygame.QUIT:
                     self.running = False
+                    self.game_over = True
+                    
                 if (0<=pygame.mouse.get_pos()[0]<=800 and 100<=pygame.mouse.get_pos()[1]<=720 and event.type == pygame.MOUSEBUTTONDOWN) or event.type==pygame.MOUSEBUTTONUP:
                 # Handle events for each piece
                     for piece in self.chessboard.pieces:
@@ -120,9 +122,14 @@ class GameController:
                 piece.show_possible_moves(current_event)
             
             
-
+            
             pygame.display.flip()  # Update the display
             self.clock.tick(60)  # Limit to 60 frames per second
+        if self.game_over == True:
+            pygame.mixer.stop()
+            pygame.mixer.quit()
+            pygame.quit()
+
 
     def handle_bot_move(self):
         if ChessData.get_bot() == "easy" and ChessData.get_chess_turn() == 'black':         
@@ -217,9 +224,6 @@ class GameController:
                         self.menu_over = True
                         self.game_over = True
                         self.running = False
-                        pygame.mixer.stop()
-                        pygame.mixer.quit()
-                        pygame.quit()
                     if event.type == pygame.MOUSEBUTTONDOWN:
                         mouse_pos = pygame.mouse.get_pos()
                         promoted_piece_name = self.check_promotion_selection(mouse_pos, color, x, y)
@@ -227,6 +231,8 @@ class GameController:
                     self.promotion_sound.play()
                     temp_chessboard = ChessData.get_chess_board().copy()
                     temp_chessboard[int((x - 20) / 100)][int((y - 107.5) / 77.5)] = promoted_piece_name
+                    ChessData.board_history.change_promotion(promoted_piece_name[6])
+                    ChessData.moves_made[-1]=ChessData.moves_made[-1]+promoted_piece_name[6]
                     ChessData.update_chess_board(temp_chessboard)
 
     def display_promotion_menu(self):
@@ -285,8 +291,12 @@ class GameController:
             self.chessboard.display_sub_menu(self.screen,image_path="Assets/Asset 9@4x.png",text="Quit",size=(150, 50),position=(345, 370))
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
-                    self.game_over = False
-                    self.running = False 
+                    self.game_over = True
+                    self.running = False
+                    self.menu_over = True
+                    pygame.mixer.stop()
+                    pygame.mixer.quit()
+                    pygame.quit() 
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     mouse_pos = pygame.mouse.get_pos()  # Get the current mouse position
             
@@ -322,8 +332,9 @@ class GameController:
             self.chessboard.display_sub_menu(self.screen,image_path="Assets/Asset 9@4x.png",text="Quit",size=(150, 50),position=(345, 370))
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
-                    self.game_over = False
+                    self.game_over = True
                     self.running = False 
+                    self.menu_over = True
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     mouse_pos = pygame.mouse.get_pos()  # Get the current mouse position
             
@@ -367,8 +378,9 @@ class GameController:
             self.chessboard.display_sub_menu(self.screen,image_path="Assets/Asset 9@4x.png",text="Hard Bot",size=(150, 50),position=(345, 370))
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
-                    self.game_over = False
+                    self.game_over = True
                     self.running = False 
+                    self.menu_over = True
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     mouse_pos = pygame.mouse.get_pos()  # Get the current mouse position
             
@@ -402,6 +414,7 @@ class GameController:
             new_chessboard[old_x][old_y] = ChessData.get_current_state()['piece']
             ChessData.update_enpassant_count('+')
             ChessData.update_enpassant_count('+')
+            ChessData.moves_made = ChessData.moves_made[:-1]
             if ChessData.get_current_state()['promotion']:
                 x,y = ChessData.get_current_state()['promotion'][0][0],ChessData.get_current_state()['promotion'][0][1]
                 self.chessboard.remove_piece(new_chessboard[x][y])
@@ -442,6 +455,7 @@ class GameController:
             
             
             ChessData.update_enpassant_count('+')
+            ChessData.moves_made = ChessData.moves_made[:-1]
             new_chessboard2 = np.copy(ChessData.get_chess_board())
             old_x2,old_y2=ChessData.get_current_state()['old']
             new_x2,new_y2=ChessData.get_current_state()['new']
@@ -488,8 +502,8 @@ class GameController:
             pass
         if 575 <= mouse_pos[0] <= 630 and 25 <= mouse_pos[1] <= 75:
             # ChessData.suggestion()
+            self.stockfish.set_fen_position("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
             self.stockfish.make_moves_from_current_position(ChessData.get_moves_made())
-            ChessData.reset_moves_made()
             ChessData.update_suggested_moves(self.stockfish.get_best_move())
     
     def handle_previous_move(self):
@@ -504,7 +518,6 @@ class GameController:
     def handle_suggested_move(self):
         if ChessData.get_suggested_moves():
             suggested_move = ChessData.get_suggested_moves()
-            print(suggested_move)
             new_suggested_move = suggested_move[0]
             old_suggested_move = suggested_move[1]
             new_suggested_move = [new_suggested_move[0] * 100 , new_suggested_move[1] * 77.5 + 100]
