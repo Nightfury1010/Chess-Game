@@ -273,8 +273,6 @@ class ChessData:
             cls.old = []
             cls.new = []
         else:
-            print(move)
-            print(type(move))
             old_x = cls.dict_x[move[0]]
             old_y = 8-int(move[1])
             new_x = cls.dict_x[move[2]]

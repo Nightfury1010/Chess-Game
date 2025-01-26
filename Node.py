@@ -47,3 +47,5 @@ class ChessHistory:
             return self.current.prev.state
         return False
 
+    def change_promotion(self,piece):
+        self.current.state['promotion']= piece
