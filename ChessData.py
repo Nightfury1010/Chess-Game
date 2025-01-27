@@ -285,4 +285,8 @@ class ChessData:
         if cls.old == [] and cls.new == []:
             return False
         return cls.old, cls.new
+    
+    @classmethod
+    def moves_made_reset(cls):
+        cls.moves_made =[]
 
