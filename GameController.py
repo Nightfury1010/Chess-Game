@@ -498,8 +498,7 @@ class GameController:
             self.chessboard.add_piece(ChessPiece(ChessData.get_current_state()['piece'], ChessData.get_current_state()['piece'][:5], f"Assets/{image2}.png", [old_x2 * 100 + 20, 107.5 + old_y2 * 77.5], self.screen))
             ChessData.undo()
         if 715 <= mouse_pos[0] <= 765 and 25 <= mouse_pos[1] <= 75:
-            
-            pass
+            self.handle_pause_menu()
         if 575 <= mouse_pos[0] <= 630 and 25 <= mouse_pos[1] <= 75:
             # ChessData.suggestion()
             self.stockfish.set_fen_position("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
@@ -524,6 +523,64 @@ class GameController:
             old_suggested_move = [old_suggested_move[0] * 100 , old_suggested_move[1] * 77.5 + 100]
             self.screen.blit(self.suggested_move_marker, (new_suggested_move[0], new_suggested_move[1]))
             self.screen.blit(self.suggested_move_marker, (old_suggested_move[0], old_suggested_move[1]))
+
+    def handle_pause_menu(self):
+        self.menu_over = False
+        while not self.menu_over:
+            pygame.display.flip()
+            game_over_menu = pygame.image.load("Assets/wooden_board.png").convert_alpha()  # Use your own marker image here
+            game_over_menu = pygame.transform.scale(game_over_menu, (300, 410)) 
+            self.screen.blit(game_over_menu, (270, 162.5))
+
+            font = pygame.font.Font(None, 40)  # Use default font and set size
+            winner_text = "Paused!" 
+            game_over_text = font.render(winner_text, True, (0, 0, 0))  # Black text
+            self.screen.blit(game_over_text, (360, 200))
+
+            self.chessboard.display_sub_menu(self.screen,image_path="Assets/Asset 9@4x.png",text="Resume",size=(150, 50),position=(345, 255))
+            self.chessboard.display_sub_menu(self.screen,image_path="Assets/Asset 9@4x.png",text="Restart",size=(150, 50),position=(345, 320))
+            self.chessboard.display_sub_menu(self.screen,image_path="Assets/Asset 9@4x.png",text="Main Menu",size=(150, 50),position=(345, 385))
+            self.chessboard.display_sub_menu(self.screen,image_path="Assets/Asset 9@4x.png",text="Quit",size=(150, 50),position=(345, 450))
+            
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    self.game_over = True
+                    self.running = False
+                    self.menu_over = True
+                    pygame.mixer.stop()
+                    pygame.mixer.quit()
+                    pygame.quit() 
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    mouse_pos = pygame.mouse.get_pos()  # Get the current mouse position
+            
+            # Check if the mouse is over the submenu
+                    if (345 <= mouse_pos[0] <= 345 + 150 and 255 <= mouse_pos[1] <= 255 + 50):  # Change these values based on your submenu position and size
+                        self.running = True
+                        self.menu_over=True
+
+                    if (345 <= mouse_pos[0] <= 345 + 150 and 320 <= mouse_pos[1] <= 320 + 50):  # Change these values based on your submenu position and size
+                        self.running = True
+                        ChessData.new_game()
+                        ChessData.board_reset()
+                        ChessData.board_history.reset()
+                        ChessData.moves_made_reset()
+                        ChessData.update_suggested_moves(None)
+                        for piece in ChessData.get_chess_board().flatten():
+                            if piece != '.':
+                                self.chessboard.remove_piece(piece)
+                        self.initialize_pieces()
+
+                        
+                        self.stockfish = Stockfish(path=r"C:\Users\LEGION\Desktop\Chess-Game\stockfish\stockfish-windows-x86-64-avx2.exe")
+                        self.menu_over=True
+                        
+
+                    elif (345 <= mouse_pos[0] <= 345 + 150 and 450 <= mouse_pos[1] <= 450 + 50):
+                        self.menu_over=True
+                        self.game_over = True  # Exit game over state
+                        self.running = False  # Stop the main loop
+
+
 
 def minmax_algorithm(chessboard, depth, is_maximizing_player, alpha, beta):
     if depth == 0 or not ChessData.get_game():
