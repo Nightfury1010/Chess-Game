@@ -87,6 +87,7 @@ class ChessPiece(pygame.sprite.Sprite):
                             if ChessData.get_chess_board()[new_x][new_y] != ".":  # If there is a piece in the target square
                                 captured_piece = ChessData.get_chess_board()[new_x][new_y]  # Get the captured piece
                                 ChessData.update_removed_piece(captured_piece)  # Update removed pieces list
+                                ChessData.handle_removed_pieces_pixels(captured_piece)
                             else:
                                 ChessData.update_move_sound(True)
 
