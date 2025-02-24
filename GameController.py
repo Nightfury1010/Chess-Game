@@ -207,6 +207,7 @@ class GameController:
             self.chessboard.draw(self.screen)  # Draw the chessboard and pieces
             self.handle_previous_move()
             self.handle_side_menu()
+            self.show_removed_pieces()
             self.handle_promotion()
             
             self.handle_suggested_move()
@@ -270,6 +271,7 @@ class GameController:
         if ChessData.get_chess_board()[new_x][new_y] != ".":
             captured_piece = ChessData.get_chess_board()[new_x][new_y]
             ChessData.update_removed_piece(captured_piece)
+            ChessData.handle_removed_pieces_pixels(captured_piece)
         else:
             ChessData.update_move_sound(True)
 
@@ -679,6 +681,7 @@ class GameController:
                         ChessData.board_history.reset()
                         ChessData.moves_made_reset()
                         ChessData.update_suggested_moves(None)
+                        ChessData.reset_removed_list()
                         for piece in ChessData.get_chess_board().flatten():
                             if piece != '.':
                                 self.chessboard.remove_piece(piece)
@@ -694,19 +697,31 @@ class GameController:
                         ChessData.board_history.reset()
                         ChessData.moves_made_reset()
                         ChessData.update_suggested_moves(None)
+                        ChessData.reset_removed_list()
                         for piece in ChessData.get_chess_board().flatten():
                             if piece != '.':
                                 self.chessboard.remove_piece(piece)
                         self.menu_over=True
                         self.game_over = False  # Exit game over state
                         self.running = False
+                        
 
                     elif (345 <= mouse_pos[0] <= 345 + 150 and 450 <= mouse_pos[1] <= 450 + 50):
                         self.menu_over=True
                         self.game_over = True  # Exit game over state
                         self.running = False  # Stop the main loop
-
-
+    
+    def show_removed_pieces(self):
+        white,black = ChessData.get_removed_list()
+        for count,piece in enumerate(white):
+            piece_img = pygame.image.load(f"Assets/{piece}White.png").convert_alpha()  # Use your own marker image here
+            piece_img = pygame.transform.scale(piece_img, (60, 60)) 
+            self.screen.blit(piece_img, (20+30*count, 7.5))
+        for count,piece in enumerate(black):
+            piece_img = pygame.image.load(f"Assets/{piece}Black.png").convert_alpha()  # Use your own marker image here
+            piece_img = pygame.transform.scale(piece_img, (60, 60)) 
+            self.screen.blit(piece_img, (20+30*count, 727.5))
+        pass
 
 def minmax_algorithm(chessboard, depth, is_maximizing_player, alpha, beta):
     if depth == 0 or not ChessData.get_game():

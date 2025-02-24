@@ -45,6 +45,8 @@ class ChessData:
     old = []
     new = []
     show_suggested_moves = False
+    white_removed = []
+    black_removed = []
 
     @classmethod
     def get_chess_board(cls):
@@ -293,3 +295,19 @@ class ChessData:
         new_x = cls.dict_x[move[2]]
         new_y = 8-int(move[3])
         return [old_x, old_y],[new_x, new_y]
+
+    @classmethod
+    def handle_removed_pieces_pixels(cls,piece):
+        if 'white' in piece and piece not in cls.white_removed:
+            cls.white_removed+=[piece[6:-1].capitalize()]
+        elif piece not in cls.black_removed:
+            cls.black_removed+=[piece[6:-1].capitalize()]
+
+    @classmethod
+    def get_removed_list(cls):
+        return cls.white_removed, cls.black_removed
+    
+    @classmethod
+    def reset_removed_list(cls):
+        cls.white_removed=[]
+        cls.black_removed=[]
