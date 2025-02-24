@@ -38,6 +38,7 @@ class GameController:
         self.stockfish.set_fen_position("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
         self.suggested_move_marker = pygame.image.load("Assets/suggested_move.png").convert_alpha()  
         self.suggested_move_marker = pygame.transform.scale(self.suggested_move_marker, (100, 77.6))
+        self.delay= 0 
 
     def initialize_pieces(self):
 
@@ -78,6 +79,7 @@ class GameController:
         
     def run(self):
         while self.running:
+            self.handle_removed_pieces()
             current_event = None
             if not ChessData.get_game():
                 self.check_mate_sound.play()
@@ -104,7 +106,6 @@ class GameController:
                 piece.update()
             
             self.handle_castling()
-            self.handle_removed_pieces()
 
             # Update pieces
             for piece in self.chessboard.pieces:
@@ -139,6 +140,20 @@ class GameController:
             except:
                 ChessData.game_over()
                 print('game over')
+        elif ChessData.get_bot() == "hard" and ChessData.get_chess_turn() == "black":
+            try:
+                if self.delay+random.randint(0,70) >100:
+                    self.stockfish.set_fen_position("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
+                    self.stockfish.make_moves_from_current_position(ChessData.get_moves_made())
+                    old_pos,new_pos = ChessData.map_move(self.stockfish.get_best_move())
+                    piece_x,piece_y = old_pos
+                    piece = ChessData.get_chess_board()[piece_x][piece_y]
+                    self.update_board_for_bot_move(new_pos, piece)
+                    self.delay=0
+                else:
+                    self.delay +=1
+            except:
+                print("Critical error!!!")
 
     def update_board_for_bot_move(self, moves, piece):
         new_x, new_y = map(int, moves)
@@ -277,6 +292,7 @@ class GameController:
         
         
     def game_over_menu(self):
+
         while(not self.menu_over):
             pygame.display.flip()
             game_over_menu = pygame.image.load("Assets/wooden_board.png").convert_alpha()  # Use your own marker image here
@@ -392,13 +408,19 @@ class GameController:
                         self.menu_over=True
                         ChessData.update_bot_level("easy")
 
-                    elif (345 <= mouse_pos[0] <= 345 + 150 and 350 <= mouse_pos[1] <= 370 + 50):
+                    elif (345 <= mouse_pos[0] <= 345 + 150 and 220 <= mouse_pos[1] <= 305 + 50):  # Change these values based on your submenu position and size
+                        self.running = True
+                        ChessData.new_game()
+                        ChessData.board_reset()
                         self.menu_over=True
-                        self.game_over = True  # Exit game over state
-                        self.running = False  # Stop the main loop
-                        pygame.mixer.stop()  # Stop all sounds
-                        pygame.mixer.quit()  # Quit the mixer
-                        pygame.quit()  # Quit Pygame                   
+                        ChessData.update_bot_level("medium")
+
+                    elif (345 <= mouse_pos[0] <= 345 + 150 and 350 <= mouse_pos[1] <= 370 + 50):
+                        self.running = True
+                        ChessData.new_game()
+                        ChessData.board_reset()
+                        self.menu_over=True
+                        ChessData.update_bot_level("hard")                  
 
     def handle_side_menu(self):
         
@@ -574,6 +596,18 @@ class GameController:
                         self.stockfish = Stockfish(path=r"C:\Users\LEGION\Desktop\Chess-Game\stockfish\stockfish-windows-x86-64-avx2.exe")
                         self.menu_over=True
                         
+                    elif (345 <= mouse_pos[0] <= 345 + 150 and 385 <= mouse_pos[1] <= 385 + 50):
+                        ChessData.new_game()
+                        ChessData.board_reset()
+                        ChessData.board_history.reset()
+                        ChessData.moves_made_reset()
+                        ChessData.update_suggested_moves(None)
+                        for piece in ChessData.get_chess_board().flatten():
+                            if piece != '.':
+                                self.chessboard.remove_piece(piece)
+                        self.menu_over=True
+                        self.game_over = False  # Exit game over state
+                        self.running = False
 
                     elif (345 <= mouse_pos[0] <= 345 + 150 and 450 <= mouse_pos[1] <= 450 + 50):
                         self.menu_over=True

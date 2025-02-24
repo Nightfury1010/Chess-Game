@@ -273,12 +273,7 @@ class ChessData:
             cls.old = []
             cls.new = []
         else:
-            old_x = cls.dict_x[move[0]]
-            old_y = 8-int(move[1])
-            new_x = cls.dict_x[move[2]]
-            new_y = 8-int(move[3])
-            cls.old= [old_x, old_y]
-            cls.new = [new_x, new_y]
+            cls.old,cls.new = cls.map_move(move)
 
     @classmethod
     def get_suggested_moves(cls):
@@ -290,3 +285,11 @@ class ChessData:
     def moves_made_reset(cls):
         cls.moves_made =[]
 
+
+    @classmethod
+    def map_move(cls,move):
+        old_x = cls.dict_x[move[0]]
+        old_y = 8-int(move[1])
+        new_x = cls.dict_x[move[2]]
+        new_y = 8-int(move[3])
+        return [old_x, old_y],[new_x, new_y]

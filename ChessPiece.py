@@ -4,7 +4,7 @@ import numpy as np
 import random
 from ChessData import ChessData
 import time
-import inspect
+
 points = []
 for i in range(8):  # For rows (Y values)
     for j in range(8):  # For columns (X values)
