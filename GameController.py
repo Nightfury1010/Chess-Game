@@ -5,6 +5,8 @@ from ChessPiece import ChessPiece,is_piece_in_check  # Import your piece class
 from ChessData import ChessData
 import random
 from stockfish import Stockfish
+import threading
+from PIL import Image
 
 class GameController:
     
@@ -19,6 +21,7 @@ class GameController:
         self.chessboard = ChessBoard("Assets/Board.png")
         self.chessboard.draw(self.screen)
         self.running = True
+        self.loading = True 
         self.pause = False
         self.game_over = False
         self.game_start_sound=pygame.mixer.Sound("Assets/game_start.mp3")
@@ -34,7 +37,7 @@ class GameController:
         self.piece_count= {'black_queen':1,'black_bishop':2,'black_knight':2,'black_rook':2,'white_queen':1,'white_bishop':2,'white_knight':2,'white_rook':2}
         self.prev_move_marker = pygame.image.load("Assets/previous_move.png").convert_alpha()  
         self.prev_move_marker = pygame.transform.scale(self.prev_move_marker, (100, 77.6)) 
-        self.stockfish = Stockfish(path=r"C:\Users\LEGION\Desktop\Chess-Game\stockfish\stockfish-windows-x86-64-avx2.exe")
+        self.stockfish = Stockfish(path=r"F:\Roshan\Roshan college\Project\6th sem project\Chess-Game-main\stockfish\stockfish-windows-x86-64-avx2.exe")
         self.stockfish.set_fen_position("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
         self.suggested_move_marker = pygame.image.load("Assets/suggested_move.png").convert_alpha()  
         self.suggested_move_marker = pygame.transform.scale(self.suggested_move_marker, (100, 77.6))
@@ -74,6 +77,95 @@ class GameController:
         self.chessboard.add_piece(ChessPiece("black_knight1", "black", "Assets/KnightBlack.png", [120, 107.5], self.screen))
         self.chessboard.add_piece(ChessPiece("black_knight2", "black", "Assets/KnightBlack.png", [620, 107.5], self.screen))
         self.game_start_sound.play()
+    
+    
+    def show_loading_screen(self):
+        screen = self.screen
+        clock = pygame.time.Clock()
+        font = pygame.font.Font(None, 36)  # Loading text font
+
+        # Load GIF frames
+        gif_frames = []
+        gif = Image.open("Assets/loading.gif")
+
+        for i in range(gif.n_frames):
+            gif.seek(i)
+            frame = gif.convert("RGBA")
+            frame_surface = pygame.image.fromstring(frame.tobytes(), frame.size, "RGBA").convert_alpha()
+            scaled_frame = pygame.transform.scale(frame_surface, (800, 820))
+            gif_frames.append(scaled_frame)
+
+        # Loading bar variables
+        bar_width, bar_height = 400, 25
+        bar_x = (screen.get_width() - bar_width) // 2
+        bar_y = screen.get_height() - 100
+        progress = 0
+
+        frame_index = 0
+        loading_complete = False
+        tapped = False 
+
+        while self.loading:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    exit()
+
+            # Simulate loading tasks
+            if progress < 100:
+                progress += 0.5
+            else:
+                loading_complete = True  # Loading is finished
+
+            # Update screen
+            screen.fill((0, 0, 0))
+
+            # Draw GIF frame
+            screen.blit(gif_frames[frame_index], ((screen.get_width() - 300) // 2, 150))
+            frame_index = (frame_index + 1) % len(gif_frames)  # Cycle through GIF frames
+
+            # Draw loading bar
+            pygame.draw.rect(screen, (50, 50, 50), (bar_x, bar_y, bar_width, bar_height))
+            pygame.draw.rect(screen, (0, 255, 0), (bar_x, bar_y, int(bar_width * (progress / 100)), bar_height))
+
+            # Show "Tap to Continue" when loading is done
+            if loading_complete:
+                tap_text = font.render("Tap to Continue", True, (255, 255, 255))
+                screen.blit(tap_text, ((screen.get_width() - tap_text.get_width()) // 2, bar_y + 50))
+
+                pygame.display.flip()
+
+                # Wait for the user to click before closing the loading screen
+                waiting_for_tap = True
+                while waiting_for_tap:
+                    for event in pygame.event.get():
+                        if event.type == pygame.QUIT:
+                            pygame.quit()
+                            exit()
+                        if event.type == pygame.MOUSEBUTTONDOWN:
+                            waiting_for_tap = False  # Exit loop when user clicks
+
+                self.loading = False  # Stop the loading screen
+
+            pygame.display.flip()
+            clock.tick(30)
+
+        pygame.mixer.music.stop()  # Stop music when loading ends
+
+    def run_game(self):
+        # Start the loading screen in a separate thread
+        self.loading = True
+        loading_thread = threading.Thread(target=self.show_loading_screen)
+        loading_thread.start()
+
+        # Wait for the loading screen to complete
+        loading_thread.join()
+
+        # Now show the menu after loading completes
+        self.menu()
+
+        # Start the game loop
+        self.run()      
 
         
         
@@ -322,7 +414,7 @@ class GameController:
                         ChessData.new_game()
                         ChessData.board_reset()
                         ChessData.board_history.reset()
-                        self.stockfish = Stockfish(path=r"C:\Users\LEGION\Desktop\Chess-Game\stockfish\stockfish-windows-x86-64-avx2.exe")
+                        self.stockfish = Stockfish(path=r"F:\Roshan\Roshan college\Project\6th sem project\Chess-Game-main\stockfish\stockfish-windows-x86-64-avx2.exe")
                         self.menu_over=True
 
                     elif (345 <= mouse_pos[0] <= 345 + 150 and 350 <= mouse_pos[1] <= 370 + 50):
@@ -516,7 +608,7 @@ class GameController:
             if 'king' in ChessData.get_current_state()['piece']:
                 image2 = ChessData.get_current_state()['piece'][6:].capitalize() 
             image2 += ChessData.get_current_state()['piece'][:5].capitalize() 
-            print(f'adding after2 {ChessData.get_current_state()['piece']}')
+            print(f"adding after2 {ChessData.get_current_state()['piece']}")
             self.chessboard.add_piece(ChessPiece(ChessData.get_current_state()['piece'], ChessData.get_current_state()['piece'][:5], f"Assets/{image2}.png", [old_x2 * 100 + 20, 107.5 + old_y2 * 77.5], self.screen))
             ChessData.undo()
         if 715 <= mouse_pos[0] <= 765 and 25 <= mouse_pos[1] <= 75:
@@ -593,7 +685,7 @@ class GameController:
                         self.initialize_pieces()
 
                         
-                        self.stockfish = Stockfish(path=r"C:\Users\LEGION\Desktop\Chess-Game\stockfish\stockfish-windows-x86-64-avx2.exe")
+                        self.stockfish = Stockfish(path=r"F:\Roshan\Roshan college\Project\6th sem project\Chess-Game-main\stockfish\stockfish-windows-x86-64-avx2.exe")
                         self.menu_over=True
                         
                     elif (345 <= mouse_pos[0] <= 345 + 150 and 385 <= mouse_pos[1] <= 385 + 50):

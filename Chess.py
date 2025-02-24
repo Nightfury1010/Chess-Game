@@ -4,6 +4,7 @@ if __name__ == "__main__":
     game = GameController()
       # Initializes the chess pieces
     while True:
+        game.show_loading_screen()
         game.menu()
         if game.game_over:
             break
