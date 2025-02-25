@@ -6,7 +6,7 @@ from ChessData import ChessData
 import random
 from stockfish import Stockfish
 import threading
-from PIL import Image
+from PIL import Image, ImageSequence
 
 class GameController:
     
@@ -88,12 +88,14 @@ class GameController:
         gif_frames = []
         gif = Image.open("Assets/loading.gif")
 
-        for i in range(gif.n_frames):
-            gif.seek(i)
-            frame = gif.convert("RGBA")
-            frame_surface = pygame.image.fromstring(frame.tobytes(), frame.size, "RGBA").convert_alpha()
-            scaled_frame = pygame.transform.scale(frame_surface, (800, 820))
-            gif_frames.append(scaled_frame)
+        for frame in ImageSequence.Iterator(gif):
+            frame = frame.convert("RGBA")
+            frame = frame.resize((self.screen_width, self.screen_height))  # Scale to fit screen
+            mode = frame.mode
+            size = frame.size
+            data = frame.tobytes()
+            pygame_frame = pygame.image.fromstring(data, size, mode)
+            gif_frames.append(pygame_frame)
 
         # Loading bar variables
         bar_width, bar_height = 400, 25
@@ -121,7 +123,7 @@ class GameController:
             screen.fill((0, 0, 0))
 
             # Draw GIF frame
-            screen.blit(gif_frames[frame_index], ((screen.get_width() - 300) // 2, 150))
+            screen.blit(gif_frames[frame_index], (0, 0))  # Fill the entire screen
             frame_index = (frame_index + 1) % len(gif_frames)  # Cycle through GIF frames
 
             # Draw loading bar
