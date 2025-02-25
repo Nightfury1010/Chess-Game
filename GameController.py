@@ -91,10 +91,7 @@ class GameController:
         for frame in ImageSequence.Iterator(gif):
             frame = frame.convert("RGBA")
             frame = frame.resize((self.screen_width, self.screen_height))  # Scale to fit screen
-            mode = frame.mode
-            size = frame.size
-            data = frame.tobytes()
-            pygame_frame = pygame.image.fromstring(data, size, mode)
+            pygame_frame = pygame.image.fromstring(frame.tobytes(), frame.size, "RGBA")
             gif_frames.append(pygame_frame)
 
         # Loading bar variables
@@ -102,28 +99,26 @@ class GameController:
         bar_x = (screen.get_width() - bar_width) // 2
         bar_y = screen.get_height() - 100
         progress = 0
-
         frame_index = 0
         loading_complete = False
-        tapped = False 
+        continue_pressed = False  # Track if user tapped "Continue"
 
-        while self.loading:
+        while not continue_pressed:  # Keep running until user taps to continue
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     exit()
+                if event.type == pygame.MOUSEBUTTONDOWN and loading_complete:
+                    continue_pressed = True  # User tapped to continue
 
             # Simulate loading tasks
             if progress < 100:
                 progress += 0.5
             else:
-                loading_complete = True  # Loading is finished
+                loading_complete = True  # Mark loading as done
 
             # Update screen
-            screen.fill((0, 0, 0))
-
-            # Draw GIF frame
-            screen.blit(gif_frames[frame_index], (0, 0))  # Fill the entire screen
+            screen.blit(gif_frames[frame_index], (0, 0))  # Keep GIF running
             frame_index = (frame_index + 1) % len(gif_frames)  # Cycle through GIF frames
 
             # Draw loading bar
@@ -135,22 +130,11 @@ class GameController:
                 tap_text = font.render("Tap to Continue", True, (255, 255, 255))
                 screen.blit(tap_text, ((screen.get_width() - tap_text.get_width()) // 2, bar_y + 50))
 
-                pygame.display.flip()
-
-                # Wait for the user to click before closing the loading screen
-                waiting_for_tap = True
-                while waiting_for_tap:
-                    for event in pygame.event.get():
-                        if event.type == pygame.QUIT:
-                            pygame.quit()
-                            exit()
-                        if event.type == pygame.MOUSEBUTTONDOWN:
-                            waiting_for_tap = False  # Exit loop when user clicks
-
-                self.loading = False  # Stop the loading screen
-
             pygame.display.flip()
-            clock.tick(30)
+            clock.tick(30)  # Maintain smooth animation
+
+        self.loading = False  # Exit the loading screen
+        return gif_frames  # Return GIF frames to be used in chess.py
 
         pygame.mixer.music.stop()  # Stop music when loading ends
 
@@ -167,10 +151,9 @@ class GameController:
         self.menu()
 
         # Start the game loop
-        self.run()      
+        self.run() 
 
-        
-        
+
     def run(self):
         while self.running:
             self.handle_removed_pieces()
@@ -429,94 +412,124 @@ class GameController:
                         pygame.mixer.quit()  # Quit the mixer
                         pygame.quit()  # Quit Pygame
 
-    def menu(self):
-        while(not self.menu_over):
+
+    def menu(self, gif_frames):
+        screen = self.screen
+        clock = pygame.time.Clock()
+        font = pygame.font.Font(None, 40)
+        menu_running = True
+        frame_index = 0
+
+        # Preload Menu Background **once** (Optimized)
+        main_menu = pygame.image.load("Assets/wooden_board.png").convert_alpha()
+        main_menu = pygame.transform.scale(main_menu, (300, 310))
+
+        # Convert GIF frames properly to **remove white borders**
+        gif_frames = [frame.convert_alpha() for frame in gif_frames]  # Use convert_alpha() to keep transparency
+
+        while menu_running:
+            screen.fill((0, 0, 0))  # Clear screen to prevent artifacts
+            screen.blit(gif_frames[frame_index], (0, 0))  # Draw smooth GIF without borders
+            frame_index = (frame_index + 1) % len(gif_frames)
+
+            # Draw menu background **without reloading**
+            screen.blit(main_menu, (270, 162.5))
+
+            # Render and display menu text
+            menu_text = font.render("Main Menu", True, (0, 0, 0))
+            screen.blit(menu_text, (345, 200))
+
+            self.chessboard.display_sub_menu(screen, "Assets/Asset 9@4x.png", "Singleplayer", (150, 50), (345, 240))
+            self.chessboard.display_sub_menu(screen, "Assets/Asset 9@4x.png", "Multiplayer", (150, 50), (345, 305))
+            self.chessboard.display_sub_menu(screen, "Assets/Asset 9@4x.png", "Quit", (150, 50), (345, 370))
+
             pygame.display.flip()
-            main_menu = pygame.image.load("Assets/wooden_board.png").convert_alpha()  # Use your own marker image here
-            main_menu = pygame.transform.scale(main_menu, (300, 310)) 
-            self.screen.blit(main_menu, (270, 162.5))
-            font = pygame.font.Font(None, 40)  # Use default font and set size
-            winner_text = "Main Menu" 
-            game_over_text = font.render(winner_text, True, (0, 0, 0))  # Black text
-            self.screen.blit(game_over_text, (345, 200))
-            self.chessboard.display_sub_menu(self.screen,image_path="Assets/Asset 9@4x.png",text="Singleplayer",size=(150, 50),position=(345, 240))
-            self.chessboard.display_sub_menu(self.screen,image_path="Assets/Asset 9@4x.png",text="Multiplayer",size=(150, 50),position=(345, 305))
-            self.chessboard.display_sub_menu(self.screen,image_path="Assets/Asset 9@4x.png",text="Quit",size=(150, 50),position=(345, 370))
+            clock.tick(30)
+
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
-                    self.game_over = True
-                    self.running = False 
-                    self.menu_over = True
-                if event.type == pygame.MOUSEBUTTONDOWN:
-                    mouse_pos = pygame.mouse.get_pos()  # Get the current mouse position
-            
-            # Check if the mouse is over the submenu
-                    if (345 <= mouse_pos[0] <= 345 + 150 and 220 <= mouse_pos[1] <= 240 + 50):  # Change these values based on your submenu position and size
-                        self.running = True
+                    pygame.quit()
+                    exit()
+                if event.type == pygame.MOUSEBUTTONDOWN:  
+                    mouse_pos = pygame.mouse.get_pos()
+
+                    # Singleplayer
+                    if 345 <= mouse_pos[0] <= 495 and 240 <= mouse_pos[1] <= 290:
+                        self.singleplayer = True
+                        self.menu_over = True
+                        self.choose_difficulty_menu(gif_frames)
+                        return  
+
+                    # Multiplayer
+                    if 345 <= mouse_pos[0] <= 495 and 305 <= mouse_pos[1] <= 355:
+                        self.singleplayer = False
+                        self.menu_over = True
                         ChessData.new_game()
-                        self.menu_over=True
-                        self.singleplayer=True
-                        self.choose_difficulty = True
+                        return  
 
-                    if (345 <= mouse_pos[0] <= 345 + 150 and 305 <= mouse_pos[1] <= 305 + 50):  # Change these values based on your submenu position and size
-                        self.running = True
-                        ChessData.new_game()
-                        self.menu_over=True
-                        self.singleplayer=False
-                        self.piece_count= {'black_queen':1,'black_bishop':2,'black_knight':2,'black_rook':2,'white_queen':1,'white_bishop':2,'white_knight':2,'white_rook':2}
-                        
+                    # Quit
+                    if 345 <= mouse_pos[0] <= 495 and 370 <= mouse_pos[1] <= 420:
+                        pygame.quit()
+                        exit()
 
-                    elif (345 <= mouse_pos[0] <= 345 + 150 and 350 <= mouse_pos[1] <= 370 + 50):
-                        self.menu_over=True
-                        self.game_over = True  # Exit game over state
-                        self.running = False  # Stop the main loop
-                        pygame.mixer.stop()  # Stop all sounds
-                        pygame.mixer.quit()  # Quit the mixer
-                        pygame.quit()  # Quit Pygame
 
-    def choose_difficulty_menu(self):
-        self.menu_over=False
-        while(not self.menu_over):
-            pygame.display.flip()
-            main_menu = pygame.image.load("Assets/wooden_board.png").convert_alpha()  # Use your own marker image here
-            main_menu = pygame.transform.scale(main_menu, (300, 310)) 
-            self.screen.blit(main_menu, (270, 162.5))
-            font = pygame.font.Font(None, 40)  # Use default font and set size
-            winner_text = "Single Player" 
-            game_over_text = font.render(winner_text, True, (0, 0, 0))  # Black text
-            self.screen.blit(game_over_text, (345, 200))
-            self.chessboard.display_sub_menu(self.screen,image_path="Assets/Asset 9@4x.png",text="Easy Bot",size=(150, 50),position=(345, 240))
-            self.chessboard.display_sub_menu(self.screen,image_path="Assets/Asset 9@4x.png",text="Medium Bot",size=(150, 50),position=(345, 305))
-            self.chessboard.display_sub_menu(self.screen,image_path="Assets/Asset 9@4x.png",text="Hard Bot",size=(150, 50),position=(345, 370))
+
+
+
+    def choose_difficulty_menu(self, gif_frames):
+        screen = self.screen
+        clock = pygame.time.Clock()
+        font = pygame.font.Font(None, 40)
+        menu_running = True
+        frame_index = 0
+
+        # Preload wooden board image once (avoids reloading every frame)
+        main_menu = pygame.image.load("Assets/wooden_board.png").convert_alpha()
+        main_menu = pygame.transform.scale(main_menu, (300, 310))
+
+        # Convert GIF frames properly to **remove white borders**
+        gif_frames = [frame.convert_alpha() for frame in gif_frames]  
+
+        while menu_running:
+            screen.fill((0, 0, 0))  # Clear screen before drawing
+            screen.blit(gif_frames[frame_index], (0, 0))  
+            frame_index = (frame_index + 1) % len(gif_frames)
+
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
-                    self.game_over = True
-                    self.running = False 
-                    self.menu_over = True
+                    pygame.quit()
+                    exit()
                 if event.type == pygame.MOUSEBUTTONDOWN:
-                    mouse_pos = pygame.mouse.get_pos()  # Get the current mouse position
-            
-            # Check if the mouse is over the submenu
-                    if (345 <= mouse_pos[0] <= 345 + 150 and 220 <= mouse_pos[1] <= 240 + 50):  # Change these values based on your submenu position and size
-                        self.running = True
-                        ChessData.new_game()
-                        ChessData.board_reset()
-                        self.menu_over=True
+                    mouse_pos = pygame.mouse.get_pos()
+
+                    # Check difficulty levels
+                    if 345 <= mouse_pos[0] <= 495 and 240 <= mouse_pos[1] <= 290:
                         ChessData.update_bot_level("easy")
-
-                    elif (345 <= mouse_pos[0] <= 345 + 150 and 220 <= mouse_pos[1] <= 305 + 50):  # Change these values based on your submenu position and size
-                        self.running = True
-                        ChessData.new_game()
-                        ChessData.board_reset()
-                        self.menu_over=True
+                        return  
+                    if 345 <= mouse_pos[0] <= 495 and 305 <= mouse_pos[1] <= 355:
                         ChessData.update_bot_level("medium")
+                        return  
+                    if 345 <= mouse_pos[0] <= 495 and 370 <= mouse_pos[1] <= 420:
+                        ChessData.update_bot_level("hard")
+                        return  
 
-                    elif (345 <= mouse_pos[0] <= 345 + 150 and 350 <= mouse_pos[1] <= 370 + 50):
-                        self.running = True
-                        ChessData.new_game()
-                        ChessData.board_reset()
-                        self.menu_over=True
-                        ChessData.update_bot_level("hard")                  
+            # Draw menu (preloaded)
+            screen.blit(main_menu, (270, 162.5))
+            menu_text = font.render("Single Player", True, (0, 0, 0))
+            screen.blit(menu_text, (345, 200))
+
+            # Draw buttons
+            self.chessboard.display_sub_menu(screen, "Assets/Asset 9@4x.png", "Easy Bot", (150, 50), (345, 240))
+            self.chessboard.display_sub_menu(screen, "Assets/Asset 9@4x.png", "Medium Bot", (150, 50), (345, 305))
+            self.chessboard.display_sub_menu(screen, "Assets/Asset 9@4x.png", "Hard Bot", (150, 50), (345, 370))
+
+            pygame.display.flip()
+            clock.tick(30)  
+
+
+
+
+
 
     def handle_side_menu(self):
         

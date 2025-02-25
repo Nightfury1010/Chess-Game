@@ -4,8 +4,8 @@ if __name__ == "__main__":
     game = GameController()
       # Initializes the chess pieces
     while True:
-        game.show_loading_screen()
-        game.menu()
+        gif_frames = game.show_loading_screen()  # Store returned gif frames
+        game.menu(gif_frames) 
         if game.game_over:
             break
         elif game.choose_difficulty :
